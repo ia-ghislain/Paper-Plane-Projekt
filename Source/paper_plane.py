@@ -1,4 +1,4 @@
-import pygame
+import pygame, sys
 from pprint import pprint
 
 '''
@@ -61,12 +61,13 @@ class Player(pygame.sprite.Sprite):
         # Did this update cause us to hit a wall?
         block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
         for block in block_hit_list:
+            # print(dir(block_hit_list))
             # If we collide on wall, check if that wall isn't on the sides
-            print pprint(block_hit_list)
+            if(block.rect.x == (SCREEN_WIDTH-10) or block.rect.x == 0):
+                self.change_x = -(self.change_x)
             # if(self.rect.x )
             # Then push the airplane to the other side (We can put some fan on both sides)
-            self.change_x = -(self.change_x)
-            pprint(block)
+            # pprint(dir(block_hit_list))
             '''
             if self.change_x > 0:
                 self.rect.right = block.rect.left # Normal collision the object slides on the wall
@@ -100,6 +101,8 @@ class Wall(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.y = y
         self.rect.x = x
+    def coordinates(self):
+        pass
 
 
 # Call this function so the Pygame library can initialize itself
@@ -139,7 +142,7 @@ all_sprite_list.add(wall)
 ''' End of Obstacles '''
 
 # Right side wall
-wall = Wall(790, 0, 10, 600,BLACK)
+wall = Wall(SCREEN_WIDTH-10, 0, 10, 600,BLACK)
 wall_list.add(wall)
 all_sprite_list.add(wall)
 
