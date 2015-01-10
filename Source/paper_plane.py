@@ -1,5 +1,4 @@
 import pygame, random
-
 '''
 Global constants
 '''
@@ -13,6 +12,8 @@ BROWN    	= ( 91,    0,   0)
 POS_LEFT 	= 0
 POS_RIGHT	= 1
 FPS			= 60
+EVENT_TL = pygame.USEREVENT + 1 # Event turn left
+EVENT_TR = pygame.USEREVENT + 2 # Event turn right
 # Screen dimensions
 SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
@@ -87,7 +88,6 @@ class Player(pygame.sprite.Sprite):
 			if(block.rect.x==self.rect.x):
 				self.score +=1
 				print self.score
-		
 
 class Wall(pygame.sprite.Sprite):
 	# Wall the player can run into.
@@ -174,31 +174,31 @@ done = False
 
 speed = 1 # Speed of the airplane
 tspeed = 3 # Turning speed
-tesla = 0 # Time elapsed since last action
+tesla = ttesla = 0 # Time elapsed since last action
 player.changespeed(0,speed) # Not turning at t=0
 dt = clock.tick(FPS) # delta of t
 pos = POS_RIGHT # Start the game @ left position
 while not done:
+	tesla += dt
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			done = True
+		elif event.type == EVENT_TL:
+			player.changespeed(-tspeed, speed)
+			pygame.time.set_timer(EVENT_TL, 0) # Stop the event to be repeated
+		elif event.type == EVENT_TR:
+			player.changespeed(tspeed, speed)
+			pygame.time.set_timer(EVENT_TR, 0) # Stop the event to be repeated
 		elif event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_LEFT:
-				player.changespeed(-tspeed, speed)
+				pygame.time.set_timer(EVENT_TL,250) #25 ms before the action is realised
 			elif event.key == pygame.K_RIGHT:
-				player.changespeed(tspeed, speed)
-		elif event.type == pygame.KEYUP:
-			if event.key == pygame.K_LEFT:
-				player.changespeed(-tspeed, speed)
-			elif event.key == pygame.K_RIGHT:
-				player.changespeed(tspeed, speed)
-	tesla += dt
+				pygame.time.set_timer(EVENT_TR,250) #25 ms before the action is realised
 	if (tesla > 2000):
-		pos = 1-pos
-		tesla = 0
-		gen_wall(pos)
+		pos = 1-pos #Turn in the opposite dir.
+		tesla = 0 # Reset timer
+		gen_wall(pos) #Generate a wall
 		print "Time to generate wall"
-		tesla = 0
 	# Rendering
 	all_sprite_list.update()
 	screen.fill(WHITE)
