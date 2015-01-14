@@ -1,4 +1,5 @@
 import pygame, random
+from time import *
 '''
 Global constants
 '''
@@ -9,6 +10,7 @@ WHITE    	= ( 255, 255, 255)
 BLUE     	= (   0,   0, 255)
 ORANGE   	= ( 252, 177,  54)
 BROWN    	= ( 91,    0,   0)
+RED 		= (255,    0,   0)
 POS_LEFT 	= 0
 POS_RIGHT	= 1
 FPS			= 60
@@ -22,10 +24,24 @@ SCREEN_HEIGHT = 600
 End of GC
 '''
 
-def texts(score):
-   font=pygame.font.Font(None,30)
-   scoretext=font.render("Score:"+str(score), 1,(255,255,255))
-   screen.blit(scoretext, (500, 457))
+def newcolour():
+	# any colour but black or white 
+	return (random.randint(10,250), random.randint(10,250), random.randint(10,250))
+
+def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False):
+	myfont = pygame.font.SysFont("None", 30)
+	mytext = myfont.render(msg, True, color)
+	size = list(myfont.size(msg))
+	if(x <= SCREEN_WIDTH/2):
+		x = x+10
+	else:
+		x = x-10-size[0]
+	mytext = mytext.convert_alpha()
+	if(s == False):
+		screen.blit(mytext,(x,y))
+	else:
+		s.blit(mytext,(x,y))
+	return mytext
 
 # This class represents the bar at the bottom that the player controls
 class Player(pygame.sprite.Sprite):
@@ -35,7 +51,7 @@ class Player(pygame.sprite.Sprite):
 	change_y = 0
 	walls = None
 	frame_walls = None
-	score = 0
+	score = -2
 
 	# Constructor function
 	def __init__(self, x, y):
@@ -58,13 +74,15 @@ class Player(pygame.sprite.Sprite):
 		self.change_y = y
 
 	def update(self):
+		if(self.score >= 0):
+			write(str(self.score),SCREEN_WIDTH)
+		else:
+			write("0",SCREEN_WIDTH)
 		# Update the player position.
 		# Move left/right
 		if((SCREEN_HEIGHT/5) > self.rect.y):
 			# Move down, simulate grav.
 			self.rect.y += self.change_y
-		else:
-			pass
 		self.rect.x += self.change_x
 
 		# Did this update cause us to hit a wall?
@@ -72,22 +90,19 @@ class Player(pygame.sprite.Sprite):
 		block_hit_list_frame = pygame.sprite.spritecollide(self, self.frame_walls, False)
 		
 		for block in block_hit_list_frame:
+			#If we hit the frame blocks then push us back in the game
 			self.change_x = -(self.change_x)
-
 		for block in block_hit_list:
-			# print(dir(block_hit_list))
-			# If we collide on wall, check if that wall isn't on the sides
-			# if(block.rect.x == (SCREEN_WIDTH-10) or block.rect.x == 0):
-				# Then we push the airplane to the other side (We can put some fan on both sides)
-				# self.change_x = -(self.change_x)
-			# else: #Collided with an obstacle
 				print "***Collision detected***"
+				write("***Crash !***",0,0,RED)
 		for block in self.walls:
 			# print str(block.rect.x) + " AND => " + str(self.rect.x)
-			block.rect.y = block.rect.y-(self.change_y)
-			if(block.rect.x==self.rect.x):
+			block.rect.y = block.rect.y-(self.change_y) #Move the blocks up
+			# write(str(self.rect.y),10,0)
+			# write(str(block.rect.y),10,30)
+			if(block.rect.y==self.rect.y): #Is the player @ the same line as block ?
+				print(self.score)
 				self.score +=1
-				print self.score
 
 class Wall(pygame.sprite.Sprite):
 	# Wall the player can run into.
@@ -119,7 +134,6 @@ def gen_wall(pos,slimit=500,color=BROWN):
 	# wall = Wall(10, SCREEN_HEIGHT+10, 400, 10)
 	# wall_list.add(wall)
 	# all_sprite_list.add(wall)
-
 
 # Call this function so the Pygame library can initialize itself
 pygame.init()
@@ -179,6 +193,7 @@ player.changespeed(0,speed) # Not turning at t=0
 dt = clock.tick(FPS) # delta of t
 pos = POS_RIGHT # Start the game @ left position
 while not done:
+	screen.fill(WHITE) # Clean the screen
 	tesla += dt
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
@@ -200,10 +215,8 @@ while not done:
 		gen_wall(pos) #Generate a wall
 		print "Time to generate wall"
 	# Rendering
+	all_sprite_list.draw(screen) # Draw everything so that text will be on top
 	all_sprite_list.update()
-	screen.fill(WHITE)
-	all_sprite_list.draw(screen)
 	pygame.display.flip()
 	clock.tick(FPS) #Frame rate (in milliseconds)
-
 pygame.quit()
