@@ -1,5 +1,7 @@
-import pygame, random
-from menu import *
+import pygame, random, sys
+from pygame.locals import *
+from pprint import pprint
+from collections import OrderedDict
 from time import *
 '''
 Global constants
@@ -55,20 +57,21 @@ class Player(pygame.sprite.Sprite):
 	score = -2
 
 	# Constructor function
-	def __init__(self, x, y):
+	def __init__(self, x, y,color=ORANGE):
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
 
 		# Set height, width
 		self.image = pygame.Surface([15, 15])
 		#Fill with ORANGE
-		self.image.fill(ORANGE)
+		self.image.fill(color)
 
 		# Make our top-left corner the passed-in location.
 		self.rect = self.image.get_rect()
 		self.rect.y = y
 		self.rect.x = x
-
+	def change_player_color(self,color):
+		self.image.fill(color)		
 	def changespeed(self, x, y):
 		#Change the speed and coordinates of the player
 		self.change_x = x
@@ -122,12 +125,13 @@ class Wall(pygame.sprite.Sprite):
 		self.rect.x = x
 
 class Menu(object):
+	''' Variables definition '''
 	legacy_list = []
 	fields = []
 	font_size = 32
-	font_path = 'data/coders_crux.ttf'
-	font = pygame.font.Font
-	dest_surface = pygame.Surface
+	font_path = 'data/coders_crux.ttf' # Font being used
+	font = pygame.font.Font # Init font
+	dest_surface = pygame.Surface # Init surface
 	fields_quantity = 0
 	background_color = (51, 51, 51)
 	text_color = (255, 255, 153)
@@ -136,6 +140,7 @@ class Menu(object):
 	paste_position = (0, 0)
 	menu_width = 0
 	menu_height = 0
+	''' End of variables definition '''
 
 	class Pole(object):
 		text = ''
@@ -243,6 +248,9 @@ class Play(object):
 					"tspeed":3,
 				}
 		self.param.update(dparam) #Merge given array & default array
+	def setp(self,uparam): # set parametter
+		self.param.update(uparam) #Merge given array & default array
+
 	def start(self):
 		frame_wall_list = pygame.sprite.Group()
 		# Left side wall
@@ -269,7 +277,7 @@ class Play(object):
 		
 		
 		# Create the player paddle object @ the middle of the screen
-		player = Player(SCREEN_WIDTH/2, 0)
+		player = Player(SCREEN_WIDTH/2, 0,self.param["pcolor"])
 		player.walls = wall_list
 		player.frame_walls = frame_wall_list
 		
@@ -331,10 +339,16 @@ all_sprite_list = pygame.sprite.Group()
 wall_list = pygame.sprite.Group()
 player = Player(SCREEN_WIDTH/2, 0)
 game = Play({"hey":False})
+#game.setp({"pcolor":ORANGE})
 
-def show_menu(menu): #Var menu is a list with (name:function)
+def show_menu(mlst): #menu list menu is a list with (name:function)
+	if not mlst: # If menu is empty
+		return False
 	screen.fill((51, 51, 51))
-	keys = menu.keys()
+	if(menu_lst.keys() != mlst.keys()):
+		mlst["<"] = {show_menu:menu_lst}
+	print game.param
+	keys = mlst.keys()
 	menu = Menu()
 	menu.init(keys, screen)  # necessary
 	menu.draw()
@@ -349,25 +363,55 @@ def show_menu(menu): #Var menu is a list with (name:function)
 				if event.key == K_DOWN:
 					# here is the Menu class method
 					menu.draw(1)
-				if event.key == K_RETURN:
-					# here is the Menu class method
-					if menu.get_position() == 0:
-						game.start()
-					elif menu.get_position() == 1:
+				if event.key == K_RETURN: # Did we press ENTER ?
+					name = keys[menu.get_position()] # Get the name of the current position.
+					if isinstance(mlst[name], list): # Is builtin function bunch of lists ?
+						for fn in mlst[name]: # Then
+							fn() # Run every function
+					elif isinstance(mlst[name], dict): # Is it a standalone function
+						for fn, param in mlst[name].iteritems(): # Then
+							fn(param) # Run every function
+					else:
+						mlst[name]() # Run it !
+				if event.key == K_ESCAPE: # Quit the game
+					name = keys[menu.get_position()] # Get the name of the current position.
+					if(name not in menu_lst.keys()):
+						show_menu(menu_lst)
+					else:
 						pygame.display.quit()
 						sys.exit()
-				if event.key == K_ESCAPE:
-					pygame.display.quit()
-					sys.exit()
-				pygame.display.update()
+				pygame.display.update() # Update the display so, we can animate screen
 			elif event.type == QUIT:
 				pygame.display.quit()
 				sys.exit()
 		pygame.time.wait(8)
 
+menu_lst = OrderedDict({
+			'Play !':OrderedDict({
+				show_menu:OrderedDict({
+					"Lvl 0":game.start
+				})
+			}),
+			'Options':OrderedDict({
+				show_menu:OrderedDict({
+					"Color":OrderedDict({
+						show_menu:OrderedDict({
+							"Blue":OrderedDict({ game.setp:{"pcolor":BLUE},write:"Done !" }),
+							"Black":OrderedDict({ game.setp:{"pcolor":BLACK},write:"Done !" }),
+							"Brown":OrderedDict({ game.setp:{"pcolor":BROWN},write:"Done !" }),
+							"Red":OrderedDict({ game.setp:{"pcolor":RED},write:"Done !" })
+						})
+					})
+				})
+			}),
+			'Quit':[
+				pygame.display.quit,
+				sys.exit
+				]
+		})
 
 def main():
-	show_menu({'Start':'game.start()', 'Quit':'sys.exit()'})
+	show_menu(menu_lst)
 	
 	#game.start()
 if __name__ == '__main__': main()
