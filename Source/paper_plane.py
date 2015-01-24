@@ -150,7 +150,8 @@ class Menu(object):
 
 	def move_menu(self, top, left):
 		self.paste_position = (top, left)
-
+	def get_block_position(self):
+		return self.paste_position
 	def set_colors(self, text, selection, background):
 		self.background_color = background
 		self.text_color = text
@@ -341,17 +342,18 @@ player = Player(SCREEN_WIDTH/2, 0)
 game = Play({"hey":False})
 #game.setp({"pcolor":ORANGE})
 
-def show_menu(mlst): #menu list menu is a list with (name:function)
+def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
 	if not mlst: # If menu is empty
 		return False
 	screen.fill((51, 51, 51))
-	if(menu_lst.keys() != mlst.keys()):
-		mlst["<"] = {show_menu:menu_lst}
+	if(menu_lst.keys() != mlst.keys()): # If not located @ the main menu
+		mlst["<"] = {show_menu:(menu_lst)} #Append the go back to main menu button in options
 	print game.param
 	keys = mlst.keys()
 	menu = Menu()
 	menu.init(keys, screen)  # necessary
 	menu.draw()
+	mpos = menu.get_block_position()
 	pygame.key.set_repeat(199, 69)  # (delay,interval)
 	pygame.display.update()
 	while 1:
@@ -379,6 +381,7 @@ def show_menu(mlst): #menu list menu is a list with (name:function)
 				if event.key == K_ESCAPE: # Quit the game
 					name = keys[menu.get_position()] # Get the name of the current position.
 					if(name not in menu_lst.keys()):
+						print title
 						show_menu(menu_lst)
 					else:
 						pygame.display.quit()
@@ -415,7 +418,6 @@ menu_lst = OrderedDict({
 		})
 
 def main():
-	pass
 	show_menu(menu_lst)
 	
 	#game.start()
