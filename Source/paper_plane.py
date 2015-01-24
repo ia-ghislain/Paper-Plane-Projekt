@@ -370,7 +370,10 @@ def show_menu(mlst): #menu list menu is a list with (name:function)
 							fn() # Run every function
 					elif isinstance(mlst[name], dict): # Is it a standalone function
 						for fn, param in mlst[name].iteritems(): # Then
-							fn(param) # Run every function
+							if(isinstance(param, tuple)): # Is this a tuple ?
+								fn(*param) # Put tuple as fn param.
+							else:
+								fn(param) # Run every function
 					else:
 						mlst[name]() # Run it !
 				if event.key == K_ESCAPE: # Quit the game
@@ -396,10 +399,11 @@ menu_lst = OrderedDict({
 				show_menu:OrderedDict({
 					"Color":OrderedDict({
 						show_menu:OrderedDict({
-							"Blue":OrderedDict({ game.setp:{"pcolor":BLUE},write:"Done !" }),
-							"Black":OrderedDict({ game.setp:{"pcolor":BLACK},write:"Done !" }),
-							"Brown":OrderedDict({ game.setp:{"pcolor":BROWN},write:"Done !" }),
-							"Red":OrderedDict({ game.setp:{"pcolor":RED},write:"Done !" })
+							"Blue":OrderedDict({ game.setp:{"pcolor":BLUE},write:("Done !",0,0,BLUE) }),
+							"Black":OrderedDict({ game.setp:{"pcolor":BLACK},write:("Done !",0,0,BLACK) }),
+							"Brown":OrderedDict({ game.setp:{"pcolor":BROWN},write:("Done !",0,0,BROWN) }),
+							"Red":OrderedDict({ game.setp:{"pcolor":RED},write:("Done !",0,0,RED) }),
+							"Orange":OrderedDict({ game.setp:{"pcolor":ORANGE},write:("Done !",0,0,ORANGE) })
 						})
 					})
 				})
@@ -411,6 +415,7 @@ menu_lst = OrderedDict({
 		})
 
 def main():
+	pass
 	show_menu(menu_lst)
 	
 	#game.start()
