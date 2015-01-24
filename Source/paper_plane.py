@@ -378,7 +378,7 @@ def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
 								fn(param) # Run every function
 					else:
 						mlst[name]() # Run it !
-				if event.key == K_ESCAPE: # Quit the game
+				if event.key == K_ESCAPE or event.key == K_LEFT: # Quit the game
 					name = keys[menu.get_position()] # Get the name of the current position.
 					if(name not in menu_lst.keys()):
 						print title
