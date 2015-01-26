@@ -1,4 +1,4 @@
-import pygame, random, sys
+import pygame, random, sys, shelve
 from pygame.locals import *
 from pprint import pprint
 from collections import OrderedDict
@@ -99,8 +99,8 @@ class Player(pygame.sprite.Sprite):
 			#If we hit the frame blocks then push us back in the game
 			self.change_x = -(self.change_x)
 		for block in block_hit_list:
-				self.changespeed(0,0) #Stop moves
-				self.crached = True #Set the variable
+				self.changespeed(0,0) # Stop moves
+				self.crached = True # Set the variable
 				print "***Collision detected***"
 				write("***Crash !***",0,0,RED)
 		for block in self.walls:
@@ -225,7 +225,7 @@ class Menu(object):
 		mx, my = self.paste_position
 		self.paste_position = (x+mx, y+my)
 
-def gen_wall(pos,slimit=500,color=BROWN):
+def gen_wall(game,pos,slimit=500,color=BROWN):
 	size = random.randint(100,slimit)
 	# pos = random.randint(0,1)
 	if(pos == POS_LEFT):
@@ -233,16 +233,21 @@ def gen_wall(pos,slimit=500,color=BROWN):
 	else:
 		x = SCREEN_WIDTH-size-10
 	wall = Wall(x, SCREEN_HEIGHT+10, size, 30,color)
-	wall_list.add(wall)
-	all_sprite_list.add(wall)
+	game.wall_list.add(wall)
+	game.all_sprite_list.add(wall)
 	# 
 	# wall = Wall(10, SCREEN_HEIGHT+10, 400, 10)
-	# wall_list.add(wall)
+	# self.wall_list.add(wall)
 	# all_sprite_list.add(wall)
 
 class Play(object):
 	"""Play the game with some parameters"""
 	param = {}
+	# List to hold all the sprites
+	all_sprite_list = pygame.sprite.Group()
+	# Make the walls. (x_pos, y_pos, width, height)
+	wall_list = pygame.sprite.Group()
+
 	def __init__(self,uparam):
 		#super(self.__class__, self).__init__()
 		super(Play, self).__init__()
@@ -255,40 +260,68 @@ class Play(object):
 		self.param.update(dparam) #Merge given array & default array
 	def setp(self,uparam): # set parametter
 		self.param.update(uparam) #Merge given array & default array
-	def crashed(self):
+	def increase_speed(self,player,factor=1):
 		pass
+
+	def set_high_score(self,player,file_name="score.ppp"):
+		f = shelve.open(file_name)
+		if("best_score" in f):# Is variable defined ?
+			if(player.score <= f["best_score"]):
+				return False # Nah ! looser !
+			else:
+				f["best_score"] = player.score
+				return True # Ok saved !
+		else:
+			f["best_score"] = player.score
+			return True # Ok saved !
+	
+	def get_high_score(self,file_name="score.ppp"):
+		f = shelve.open(file_name)
+		return int(f["best_score"])
+	
+	def crashed(self,player):
+		if(self.set_high_score(player)):
+			#del player
+			screen.fill(BLACK)
+			write("**** "+str(player.score)+" IS THE NEW BEST SCORE ****",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,BLACK)
+		else:
+			#del player
+			#screen.fill(BLACK)
+			write("You're a loooooser !",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,BLACK)
+
+
 
 	def start(self):
 		frame_wall_list = pygame.sprite.Group()
 		# Left side wall
-		wall = Wall(0, 0, 10, 600,BLACK)
+		wall = Wall(0, 0, 10, SCREEN_HEIGHT,BLACK)
 		frame_wall_list.add(wall)
-		all_sprite_list.add(wall)
+		self.all_sprite_list.add(wall)
 		''' Obstacles samples
 		self, x, y, width, height,color=BROWN
 		'''
 		wall = Wall(10, SCREEN_HEIGHT/5, 300, 500,BLUE)
-		wall_list.add(wall)
-		all_sprite_list.add(wall)
+		self.wall_list.add(wall)
+		self.all_sprite_list.add(wall)
 		
 		wall = Wall(SCREEN_WIDTH-310, SCREEN_HEIGHT/5, 300, 500,BLUE)
-		wall_list.add(wall)
-		all_sprite_list.add(wall)
+		self.wall_list.add(wall)
+		self.all_sprite_list.add(wall)
 		
 		''' End of Obstacles '''
 		
 		# Right side wall
-		wall = Wall(SCREEN_WIDTH-10, 0, 10, 600,BLACK)
+		wall = Wall(SCREEN_WIDTH-10, 0, 10, SCREEN_HEIGHT,BLACK)
 		frame_wall_list.add(wall)
-		all_sprite_list.add(wall)
+		self.all_sprite_list.add(wall)
 		
 		
 		# Create the player paddle object @ the middle of the screen
 		player = Player(SCREEN_WIDTH/2, 0,self.param["pcolor"])
-		player.walls = wall_list
+		player.walls = self.wall_list
 		player.frame_walls = frame_wall_list
 		
-		all_sprite_list.add(player)
+		self.all_sprite_list.add(player)
 		
 		clock = pygame.time.Clock()
 		
@@ -320,13 +353,15 @@ class Play(object):
 			if (tesla > 2000):
 				pos = 1-pos #Turn in the opposite dir.
 				tesla = 0 # Reset timer
-				gen_wall(pos) #Generate a wall
+				gen_wall(self,pos) #Generate a wall
 				print "Time to generate wall"
 			# Rendering
-			all_sprite_list.draw(screen) # Draw everything so that text will be on top
-			all_sprite_list.update()
+			self.all_sprite_list.draw(screen) # Draw everything so that text will be on top
+			self.all_sprite_list.update()
 			pygame.display.flip()
 			clock.tick(FPS) #Frame rate (in milliseconds)
+			if(player.crached):
+				self.crashed(player) # The player crashed ! What a nooooob !
 		pygame.quit()
 
 
@@ -339,12 +374,7 @@ screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
 # Set the title of the window
 pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v0.1')
 
-# List to hold all the sprites
-all_sprite_list = pygame.sprite.Group()
 
-# Make the walls. (x_pos, y_pos, width, height)
-wall_list = pygame.sprite.Group()
-player = Player(SCREEN_WIDTH/2, 0)
 game = Play({"hey":False})
 #game.setp({"pcolor":ORANGE})
 
