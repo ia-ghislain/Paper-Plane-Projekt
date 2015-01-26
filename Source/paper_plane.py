@@ -55,6 +55,7 @@ class Player(pygame.sprite.Sprite):
 	walls = None
 	frame_walls = None
 	score = -2
+	crached = False
 
 	# Constructor function
 	def __init__(self, x, y,color=ORANGE):
@@ -74,8 +75,9 @@ class Player(pygame.sprite.Sprite):
 		self.image.fill(color)		
 	def changespeed(self, x, y):
 		#Change the speed and coordinates of the player
-		self.change_x = x
-		self.change_y = y
+		if(not self.crached):
+			self.change_x = x
+			self.change_y = y
 
 	def update(self):
 		if(self.score >= 0):
@@ -97,6 +99,8 @@ class Player(pygame.sprite.Sprite):
 			#If we hit the frame blocks then push us back in the game
 			self.change_x = -(self.change_x)
 		for block in block_hit_list:
+				self.changespeed(0,0) #Stop moves
+				self.crached = True #Set the variable
 				print "***Collision detected***"
 				write("***Crash !***",0,0,RED)
 		for block in self.walls:
@@ -251,6 +255,8 @@ class Play(object):
 		self.param.update(dparam) #Merge given array & default array
 	def setp(self,uparam): # set parametter
 		self.param.update(uparam) #Merge given array & default array
+	def crashed(self):
+		pass
 
 	def start(self):
 		frame_wall_list = pygame.sprite.Group()
