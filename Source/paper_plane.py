@@ -22,6 +22,7 @@ EVENT_TR = pygame.USEREVENT + 2 # Event turn right
 # Screen dimensions
 SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
+IS_FULL_SCREEN = False
 
 '''
 End of GC
@@ -409,10 +410,12 @@ game = Play({"hey":False})
 def change_screen_mode(w,h,fs=False):
 	global SCREEN_WIDTH
 	global SCREEN_HEIGHT
+	global IS_FULL_SCREEN
 	global menu_lst
-	if(w != SCREEN_WIDTH and h != SCREEN_HEIGHT):
+	if((w != SCREEN_WIDTH and h != SCREEN_HEIGHT) or (IS_FULL_SCREEN!=fs)):
 		SCREEN_WIDTH = w
 		SCREEN_HEIGHT = h
+		IS_FULL_SCREEN = fs
 		if(fs== True):
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT],pygame.FULLSCREEN)
 		else:
