@@ -31,19 +31,29 @@ def newcolour():
 	# any colour but black or white 
 	return (random.randint(10,250), random.randint(10,250), random.randint(10,250))
 
-def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False):
+def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False,use_gravity_center=False): #use_gravity_center, will use the gravity center of the text.
 	myfont = pygame.font.SysFont("None", 30)
 	mytext = myfont.render(msg, True, color)
+	mytext_rect = mytext.get_rect()
+	#G = myfont.render("+", True, RED) # UNCOMMENT 4 DEBUG : Display the gravity center
 	size = list(myfont.size(msg))
 	if(x <= SCREEN_WIDTH/2):
 		x = x+10
 	else:
 		x = x-10-size[0]
 	mytext = mytext.convert_alpha()
+	mytext_rect.center = (x,y)
 	if(s == False):
-		screen.blit(mytext,(x,y))
+		if(use_gravity_center==True):
+			screen.blit(mytext,mytext_rect)
+		else:
+			screen.blit(mytext,(x,y))
+		#screen.blit(G,(x,y-10)) # UNCOMMENT 4 DEBUG : Display the gravity center
 	else:
-		s.blit(mytext,(x,y))
+		if(use_gravity_center==True):
+			s.blit(mytext,mytext_rect)
+		else:
+			s.blit(mytext,(x,y))
 	return mytext
 
 # This class represents the bar at the bottom that the player controls
@@ -55,10 +65,11 @@ class Player(pygame.sprite.Sprite):
 	walls = None
 	frame_walls = None
 	score = -2
+	high_score = 0
 	crached = False
 
 	# Constructor function
-	def __init__(self, x, y,color=ORANGE):
+	def __init__(self, x, y,color=ORANGE,high_score=0):
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
 
@@ -66,13 +77,13 @@ class Player(pygame.sprite.Sprite):
 		self.image = pygame.Surface([15, 15])
 		#Fill with ORANGE
 		self.image.fill(color)
-
+		self.high_score = high_score # Set the hscore
 		# Make our top-left corner the passed-in location.
 		self.rect = self.image.get_rect()
 		self.rect.y = y
 		self.rect.x = x
 	def change_player_color(self,color):
-		self.image.fill(color)		
+		self.image.fill(color)
 	def changespeed(self, x, y):
 		#Change the speed and coordinates of the player
 		if(not self.crached):
@@ -84,6 +95,9 @@ class Player(pygame.sprite.Sprite):
 			write(str(self.score),SCREEN_WIDTH)
 		else:
 			write("0",SCREEN_WIDTH)
+		if(self.score >= self.high_score): # Are you good ?
+			self.high_score = self.score # Ok ! not that bad !
+		write(str(self.high_score),SCREEN_WIDTH,30,RED)
 		# Update the player position.
 		# Move left/right
 		if((SCREEN_HEIGHT/5) > self.rect.y):
@@ -260,8 +274,14 @@ class Play(object):
 		self.param.update(dparam) #Merge given array & default array
 	def setp(self,uparam): # set parametter
 		self.param.update(uparam) #Merge given array & default array
+	
 	def increase_speed(self,player,factor=1):
+		'''
+			> Need to decrease wall generation time &
+			> Need to increase gravity speed
+		'''
 		pass
+
 
 	def set_high_score(self,player,file_name="score.ppp"):
 		f = shelve.open(file_name)
@@ -277,19 +297,27 @@ class Play(object):
 	
 	def get_high_score(self,file_name="score.ppp"):
 		f = shelve.open(file_name)
-		return int(f["best_score"])
+		if("best_score" in f):# Is variable defined ?
+			return int(f["best_score"])
+		else:
+			f["best_score"] = 0 # Set the high score & go !
+			return 0
 	
 	def crashed(self,player):
+		self.reset_game()
 		if(self.set_high_score(player)):
-			#del player
-			screen.fill(BLACK)
-			write("**** "+str(player.score)+" IS THE NEW BEST SCORE ****",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,BLACK)
+			screen.fill(ORANGE)
+			write("**** "+str(player.score)+" IS THE NEW BEST SCORE ****",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,use_gravity_center=True)
 		else:
-			#del player
-			#screen.fill(BLACK)
-			write("You're a loooooser !",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,BLACK)
+			screen.fill(BLACK)
+			write("You're a loooooser !",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,use_gravity_center=True)
+		del player # Clean the game
 
-
+	def reset_game(self):
+		# List to hold all the sprites
+		self.all_sprite_list = pygame.sprite.Group()
+		# Make the walls. (x_pos, y_pos, width, height)
+		self.wall_list = pygame.sprite.Group()
 
 	def start(self):
 		frame_wall_list = pygame.sprite.Group()
@@ -317,7 +345,7 @@ class Play(object):
 		
 		
 		# Create the player paddle object @ the middle of the screen
-		player = Player(SCREEN_WIDTH/2, 0,self.param["pcolor"])
+		player = Player(SCREEN_WIDTH/2, 0,self.param["pcolor"],self.get_high_score())
 		player.walls = self.wall_list
 		player.frame_walls = frame_wall_list
 		
@@ -338,7 +366,7 @@ class Play(object):
 			tesla += dt
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
-					done = True
+					show_menu(menu_lst) # On quit, return to the main menu
 				elif event.type == EVENT_TL:
 					player.changespeed(-tspeed, speed)
 					pygame.time.set_timer(EVENT_TL, 0) # Stop the event to be repeated
@@ -354,15 +382,15 @@ class Play(object):
 				pos = 1-pos #Turn in the opposite dir.
 				tesla = 0 # Reset timer
 				gen_wall(self,pos) #Generate a wall
-				print "Time to generate wall"
 			# Rendering
 			self.all_sprite_list.draw(screen) # Draw everything so that text will be on top
 			self.all_sprite_list.update()
 			pygame.display.flip()
 			clock.tick(FPS) #Frame rate (in milliseconds)
 			if(player.crached):
+				del frame_wall_list
 				self.crashed(player) # The player crashed ! What a nooooob !
-		pygame.quit()
+				break # Stop the loop
 
 
 # Call this function so the Pygame library can initialize itself
@@ -378,13 +406,26 @@ pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v0.1')
 game = Play({"hey":False})
 #game.setp({"pcolor":ORANGE})
 
+def change_screen_mode(w,h,fs=False):
+	global SCREEN_WIDTH
+	global SCREEN_HEIGHT
+	global menu_lst
+	if(w != SCREEN_WIDTH and h != SCREEN_HEIGHT):
+		SCREEN_WIDTH = w
+		SCREEN_HEIGHT = h
+		if(fs== True):
+			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT],pygame.FULLSCREEN)
+		else:
+			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+		show_menu(menu_lst['Options'][show_menu]["Display"][show_menu])
+	return True
+
 def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
 	if not mlst: # If menu is empty
 		return False
 	screen.fill((51, 51, 51))
 	if(menu_lst.keys() != mlst.keys()): # If not located @ the main menu
 		mlst["<"] = {show_menu:(menu_lst)} #Append the go back to main menu button in options
-	print game.param
 	keys = mlst.keys()
 	menu = Menu()
 	menu.init(keys, screen)  # necessary
@@ -417,7 +458,6 @@ def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
 				if event.key == K_ESCAPE or event.key == K_LEFT: # Quit the game
 					name = keys[menu.get_position()] # Get the name of the current position.
 					if(name not in menu_lst.keys()):
-						print title
 						show_menu(menu_lst)
 					else:
 						pygame.display.quit()
@@ -444,7 +484,18 @@ menu_lst = OrderedDict({
 							"Red":OrderedDict({ game.setp:{"pcolor":RED},write:("Done !",0,0,RED) }),
 							"Orange":OrderedDict({ game.setp:{"pcolor":ORANGE},write:("Done !",0,0,ORANGE) })
 						})
-					})
+					}),
+					"Display":OrderedDict({
+						show_menu:OrderedDict({
+							"Windowed (800x600)":OrderedDict({ change_screen_mode:(800,600) }),
+							"Windowed (1024x768)":OrderedDict({ change_screen_mode:(1024,768) }),
+							"Windowed (1280x800)":OrderedDict({ change_screen_mode:(1280,800) }),
+							"Full Screen (800x600)":OrderedDict({ change_screen_mode:(800,600,True) }),
+							"Full Screen (1024x768)":OrderedDict({ change_screen_mode:(1024,768,True) }),
+							"Full Screen (1280x800)":OrderedDict({ change_screen_mode:(1280,800,True) }),
+						})
+					}),
+
 				})
 			}),
 			'Quit':[
