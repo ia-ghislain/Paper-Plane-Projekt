@@ -262,6 +262,7 @@ class Play(object):
 	all_sprite_list = pygame.sprite.Group()
 	# Make the walls. (x_pos, y_pos, width, height)
 	wall_list = pygame.sprite.Group()
+	wall_gentime = 2000 # in ms
 
 	def __init__(self,uparam):
 		#super(self.__class__, self).__init__()
@@ -280,6 +281,8 @@ class Play(object):
 		'''
 			> Need to decrease wall generation time &
 			> Need to increase gravity speed
+			 (!) Tips : - Use player.changespeed function
+			 			- Use self.wall_gentime variable
 		'''
 		pass
 
@@ -381,7 +384,7 @@ class Play(object):
 						pygame.time.set_timer(EVENT_TL,250) #25 ms before the action is realised
 					elif event.key == pygame.K_RIGHT:
 						pygame.time.set_timer(EVENT_TR,250) #25 ms before the action is realised
-			if (tesla > 2000):
+			if (tesla > self.wall_gentime):
 				pos = 1-pos #Turn in the opposite dir.
 				tesla = 0 # Reset timer
 				gen_wall(self,pos) #Generate a wall
