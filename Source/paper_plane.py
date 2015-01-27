@@ -312,6 +312,8 @@ class Play(object):
 		else:
 			screen.fill(BLACK)
 			write("You're a loooooser !",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,use_gravity_center=True)
+		write("<ESCAPE> Main menu",0,(SCREEN_HEIGHT)-30,WHITE)
+		write("<ENTER> Retry",SCREEN_WIDTH,(SCREEN_HEIGHT)-30,WHITE)
 		del player # Clean the game
 
 	def reset_game(self):
