@@ -1,6 +1,6 @@
 import pygame, random, sys, shelve
 from pygame.locals import *
-from pprint import pprint
+# from pprint import pprint
 from collections import OrderedDict
 from time import *
 '''
@@ -11,6 +11,7 @@ Global constants
 BLACK    	= (   0,   0,   0)
 WHITE    	= ( 255, 255, 255)
 BLUE     	= (   0,   0, 255)
+LIGHT_BLUE	= ( 49,  162, 238)
 ORANGE   	= ( 252, 177,  54)
 BROWN    	= ( 91,    0,   0)
 RED 		= (255,    0,   0)
@@ -129,15 +130,21 @@ class Player(pygame.sprite.Sprite):
 
 class Wall(pygame.sprite.Sprite):
 	# Wall the player can run into.
-	def __init__(self, x, y, width, height,color=BROWN):
+	def __init__(self, x, y, width, height,color=BROWN,imgfn="data/images/bloc.png"): #imgfilename
 		# Constructor for the wall that the player can run into.
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
 
 		# Make a blue wall, of the size specified in the parameters
+		img = pygame.image.load(imgfn).convert_alpha()
 		self.image = pygame.Surface([width, height])
 		self.image.fill(color)
-
+		size = img.get_rect().size # you can get size 0473912938
+		if(height>size[1]):
+			for i in xrange(0,(height/size[1])+1): #+1 for the bottom
+				self.image.blit(img,(0,i*size[1]))
+		else:
+			self.image.blit(img,(0,0))
 		# Make our top-left corner the passed-in location.
 		self.rect = self.image.get_rect()
 		self.rect.y = y
@@ -458,7 +465,7 @@ def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
 					elif isinstance(mlst[name], dict): # Is it a standalone function
 						for fn, param in mlst[name].iteritems(): # Then
 							if(isinstance(param, tuple)): # Is this a tuple ?
-								fn(*param) # Put tuple as fn param.
+								fn(*param) # Put tuple as fn param. (The wildcard does that)
 							else:
 								fn(param) # Run every function
 					else:
