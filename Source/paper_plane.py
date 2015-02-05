@@ -269,9 +269,12 @@ class Play(object):
 		super(Play, self).__init__()
 		dparam = {	
 					"pcolor":ORANGE,
-					"dynamic_speed":False,
-					"speed":1,
-					"tspeed":3,
+					"dynamic_speed":False, # Does the plane dynamicly
+					"dynamic_speed_factor":1,
+					"speed":1, # Speed of the airplane
+					"tspeed":3, # Turning speed of the airplane
+					"action_delay":True, # Do we add delay ?
+					"action_delay_time":250 # 25ms. If you want a delay of 0, then set action_delay to False
 				}
 		self.param.update(dparam) #Merge given array & default array
 	def setp(self,uparam): # set parametter
@@ -284,7 +287,8 @@ class Play(object):
 			 (!) Tips : - Use player.changespeed function
 			 			- Use self.wall_gentime variable
 		'''
-		pass
+		self.wall_gentime = self.wall_gentime*(1-0.2)
+		print self.wall_gentime
 
 
 	def set_high_score(self,player,file_name="score.ppp"):
@@ -327,27 +331,27 @@ class Play(object):
 
 	def start(self):
 		frame_wall_list = pygame.sprite.Group()
-		# Left side wall
+		''' 
+		Initial walls
+		'''
+		#Left border wall
 		wall = Wall(0, 0, 10, SCREEN_HEIGHT,BLACK)
 		frame_wall_list.add(wall)
 		self.all_sprite_list.add(wall)
-		''' Obstacles samples
-		self, x, y, width, height,color=BROWN
-		'''
+		# Blue left wall
 		wall = Wall(10, SCREEN_HEIGHT/5, 300, 500,BLUE)
 		self.wall_list.add(wall)
 		self.all_sprite_list.add(wall)
-		
+		# Right left wall
 		wall = Wall(SCREEN_WIDTH-310, SCREEN_HEIGHT/5, 300, 500,BLUE)
 		self.wall_list.add(wall)
 		self.all_sprite_list.add(wall)
-		
-		''' End of Obstacles '''
-		
-		# Right side wall
+
+		# Right border wall
 		wall = Wall(SCREEN_WIDTH-10, 0, 10, SCREEN_HEIGHT,BLACK)
 		frame_wall_list.add(wall)
 		self.all_sprite_list.add(wall)
+		''' End of Obstacles '''
 		
 		
 		# Create the player paddle object @ the middle of the screen
@@ -361,29 +365,34 @@ class Play(object):
 		
 		done = False
 		
-		speed = 1 # Speed of the airplane
-		tspeed = 3 # Turning speed
 		tesla,ttesla = 0,0 # Time elapsed since last action
-		player.changespeed(0,speed) # Not turning at t=0
+		player.changespeed(0,self.param["speed"]) # Not turning at t=0
 		dt = clock.tick(FPS) # delta of t
 		pos = POS_RIGHT # Start the game @ left position
 		while not done:
+			self.increase_speed(player,1)
 			screen.fill(WHITE) # Clean the screen
 			tesla += dt
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
 					show_menu(menu_lst) # On quit, return to the main menu
 				elif event.type == EVENT_TL:
-					player.changespeed(-tspeed, speed)
+					player.changespeed(-self.param["tspeed"], self.param["speed"])
 					pygame.time.set_timer(EVENT_TL, 0) # Stop the event to be repeated
 				elif event.type == EVENT_TR:
-					player.changespeed(tspeed, speed)
+					player.changespeed(self.param["tspeed"], self.param["speed"])
 					pygame.time.set_timer(EVENT_TR, 0) # Stop the event to be repeated
 				elif event.type == pygame.KEYDOWN:
 					if event.key == pygame.K_LEFT:
-						pygame.time.set_timer(EVENT_TL,250) #25 ms before the action is realised
+						if(self.param["action_delay"] == False):
+							player.changespeed(-self.param["tspeed"], self.param["speed"])
+						else:
+							pygame.time.set_timer(EVENT_TL,self.param["action_delay_time"]) #25 ms before the action is realised
 					elif event.key == pygame.K_RIGHT:
-						pygame.time.set_timer(EVENT_TR,250) #25 ms before the action is realised
+						if(self.param["action_delay"] == False):
+							player.changespeed(self.param["tspeed"], self.param["speed"])
+						else:
+							pygame.time.set_timer(EVENT_TR,self.param["action_delay_time"]) #25 ms before the action is realised
 			if (tesla > self.wall_gentime):
 				pos = 1-pos #Turn in the opposite dir.
 				tesla = 0 # Reset timer
