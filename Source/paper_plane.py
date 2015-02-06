@@ -68,16 +68,22 @@ class Player(pygame.sprite.Sprite):
 	score = -2
 	high_score = 0
 	crached = False
-
+	plane_color = ORANGE
+	plane_img = {	
+					"face":pygame.image.load("data/images/plane_face.png"),
+					"left":pygame.image.load("data/images/plane_left.png"),
+					"right":pygame.image.load("data/images/plane_right.png")
+				}
 	# Constructor function
 	def __init__(self, x, y,color=ORANGE,high_score=0):
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
-
+		self.plane_color = color
 		# Set height, width
-		self.image = pygame.Surface([15, 15])
+		self.image = pygame.Surface([22, 23],pygame.SRCALPHA) # Contain the plane
 		#Fill with ORANGE
-		self.image.fill(color)
+		self.image.fill(self.plane_color) # Nevermind...
+		self.image.blit(self.plane_img["face"],(0,0))
 		self.high_score = high_score # Set the hscore
 		# Make our top-left corner the passed-in location.
 		self.rect = self.image.get_rect()
@@ -88,6 +94,12 @@ class Player(pygame.sprite.Sprite):
 	def changespeed(self, x, y):
 		#Change the speed and coordinates of the player
 		if(not self.crached):
+			if(x<0):
+				self.image.fill(self.plane_color) # Nevermind...
+				self.image.blit(self.plane_img["left"],(0,0))
+			elif(x>0):
+				self.image.fill(self.plane_color) # Nevermind...
+				self.image.blit(self.plane_img["right"],(0,0))
 			self.change_x = x
 			self.change_y = y
 
@@ -128,6 +140,14 @@ class Player(pygame.sprite.Sprite):
 				self.score +=1
 
 class Wall(pygame.sprite.Sprite):
+	'''
+	wall_img =	{
+					"top":pygame.image.load("data/images/"), # Need to be defined & drawn
+					"center":pygame.image.load("data/images/"), # Need to be defined & drawn
+					"left":pygame.image.load("data/images/"), # Need to be defined & drawn
+					"right":pygame.image.load("data/images/") # Need to be defined & drawn
+				} 
+	'''
 	# Wall the player can run into.
 	def __init__(self, x, y, width, height,color=BROWN):
 		# Constructor for the wall that the player can run into.
