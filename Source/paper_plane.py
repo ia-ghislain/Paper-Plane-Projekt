@@ -68,7 +68,7 @@ class Player(pygame.sprite.Sprite):
 	score = -2
 	high_score = 0
 	crached = False
-	plane_color = ORANGE
+	plane_color = (0,0,0,0) #Nothing by default
 	plane_img = {	
 					"face":pygame.image.load("data/images/plane_face.png"),
 					"left":pygame.image.load("data/images/plane_left.png"),
@@ -83,6 +83,7 @@ class Player(pygame.sprite.Sprite):
 		self.image = pygame.Surface([22, 23],pygame.SRCALPHA) # Contain the plane
 		#Fill with ORANGE
 		self.image.fill(self.plane_color) # Nevermind...
+		self.image.set_colorkey(WHITE) # White is the transparent color
 		self.image.blit(self.plane_img["face"],(0,0))
 		self.high_score = high_score # Set the hscore
 		# Make our top-left corner the passed-in location.
@@ -421,6 +422,7 @@ class Play(object):
 
 # Call this function so the Pygame library can initialize itself
 pygame.init()
+pygame.mouse.set_visible(False) # Hide the mouse
 
 # Create an 800x600 sized screen
 screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
