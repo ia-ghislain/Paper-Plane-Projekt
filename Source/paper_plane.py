@@ -1,6 +1,6 @@
 import pygame, random, sys, shelve
 from pygame.locals import *
-from pprint import pprint
+# from pprint import pprint
 from collections import OrderedDict
 from time import *
 '''
@@ -19,6 +19,7 @@ POS_RIGHT	= 1
 FPS			= 60
 EVENT_TL = pygame.USEREVENT + 1 # Event turn left
 EVENT_TR = pygame.USEREVENT + 2 # Event turn right
+# EVENT_WALL_PASSED = pygame.USEREVENT + 3 # The user made a point. (Used near lines : 130;131;387;388)
 # Screen dimensions
 SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
@@ -90,6 +91,8 @@ class Player(pygame.sprite.Sprite):
 		if(not self.crached):
 			self.change_x = x
 			self.change_y = y
+	def getspeed(self):
+		return int(self.change_x),int(self.change_y)
 
 	def update(self):
 		if(self.score >= 0):
@@ -126,6 +129,9 @@ class Player(pygame.sprite.Sprite):
 			if(block.rect.y==self.rect.y): #Is the player @ the same line as block ?
 				print(self.score)
 				self.score +=1
+				# ev = pygame.event.Event(EVENT_WALL_PASSED, {'score':self.score}) # Create the event
+				# pygame.event.post(ev) # Broadcast the event
+
 
 class Wall(pygame.sprite.Sprite):
 	# Wall the player can run into.
@@ -258,6 +264,7 @@ def gen_wall(game,pos,slimit=500,color=BROWN):
 class Play(object):
 	"""Play the game with some parameters"""
 	param = {}
+	iparam = {} #Initial parametters. Do not remove !
 	# List to hold all the sprites
 	all_sprite_list = pygame.sprite.Group()
 	# Make the walls. (x_pos, y_pos, width, height)
@@ -271,12 +278,16 @@ class Play(object):
 					"pcolor":ORANGE,
 					"dynamic_speed":False, # Does the plane dynamicly
 					"dynamic_speed_factor":1,
+					"dynamic_speed_time_interval":3000, # Use to launch the function every x seconds
 					"speed":1, # Speed of the airplane
 					"tspeed":3, # Turning speed of the airplane
 					"action_delay":True, # Do we add delay ?
-					"action_delay_time":250 # 25ms. If you want a delay of 0, then set action_delay to False
+					"action_delay_time":250, # 25ms. If you want a delay of 0, then set action_delay to False
+					"wall_gentime":2000
 				}
 		self.param.update(dparam) #Merge given array & default array
+		self.iparam = self.param
+		self.wall_gentime = self.param["wall_gentime"]
 	def setp(self,uparam): # set parametter
 		self.param.update(uparam) #Merge given array & default array
 	
@@ -284,10 +295,16 @@ class Play(object):
 		'''
 			> Need to decrease wall generation time &
 			> Need to increase gravity speed
+			> Each time a wall passed, then...
 			 (!) Tips : - Use player.changespeed function
+			 			- Use player.getspeed function
 			 			- Use self.wall_gentime variable
 		'''
-		self.wall_gentime = self.wall_gentime*(1-0.2)
+		self.wall_gentime = self.wall_gentime*(1-0.105)
+		speed = player.getspeed()
+		self.param["speed"] = self.param["speed"]+1
+		player.changespeed(speed[0],self.param["speed"])
+		self.param["tspeed"] = self.param["tspeed"]+1
 		print self.wall_gentime
 
 
@@ -328,6 +345,7 @@ class Play(object):
 		self.all_sprite_list = pygame.sprite.Group()
 		# Make the walls. (x_pos, y_pos, width, height)
 		self.wall_list = pygame.sprite.Group()
+		self.param = self.iparam
 
 	def start(self):
 		frame_wall_list = pygame.sprite.Group()
@@ -365,17 +383,19 @@ class Play(object):
 		
 		done = False
 		
-		tesla,ttesla = 0,0 # Time elapsed since last action
+		tesla,dtesla = 0,0 # Time elapsed since last action & Dynamic tesla
 		player.changespeed(0,self.param["speed"]) # Not turning at t=0
 		dt = clock.tick(FPS) # delta of t
 		pos = POS_RIGHT # Start the game @ left position
 		while not done:
-			self.increase_speed(player,1)
 			screen.fill(WHITE) # Clean the screen
 			tesla += dt
+			dtesla += dt
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
 					show_menu(menu_lst) # On quit, return to the main menu
+				# elif event.type == EVENT_WALL_PASSED: # If the wall has been passed
+					# pass
 				elif event.type == EVENT_TL:
 					player.changespeed(-self.param["tspeed"], self.param["speed"])
 					pygame.time.set_timer(EVENT_TL, 0) # Stop the event to be repeated
@@ -394,9 +414,12 @@ class Play(object):
 						else:
 							pygame.time.set_timer(EVENT_TR,self.param["action_delay_time"]) #25 ms before the action is realised
 			if (tesla > self.wall_gentime):
-				pos = 1-pos #Turn in the opposite dir.
+				pos = 1-pos #Turn in the opposite dir. Generate a wall on the other side.
 				tesla = 0 # Reset timer
 				gen_wall(self,pos) #Generate a wall
+			if(dtesla > self.param["dynamic_speed_time_interval"]):
+				dtesla = 0
+				self.increase_speed(player,self.param["dynamic_speed_factor"])
 			# Rendering
 			self.all_sprite_list.draw(screen) # Draw everything so that text will be on top
 			self.all_sprite_list.update()
