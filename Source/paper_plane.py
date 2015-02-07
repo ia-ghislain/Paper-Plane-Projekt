@@ -402,9 +402,9 @@ class Play(object):
 					pygame.time.set_timer(EVENT_TR, 0) # Stop the event to be repeated
 				elif event.type == pygame.KEYDOWN:
 					if event.key == pygame.K_LEFT:
-						pygame.time.set_timer(EVENT_TL,1) #25 ms before the action is realised
+						pygame.time.set_timer(EVENT_TL,250) #25 ms before the action is realised
 					elif event.key == pygame.K_RIGHT:
-						pygame.time.set_timer(EVENT_TR,1) #25 ms before the action is realised
+						pygame.time.set_timer(EVENT_TR,250) #25 ms before the action is realised
 			if (tesla > self.wall_gentime):
 				pos = 1-pos #Turn in the opposite dir.
 				tesla = 0 # Reset timer
