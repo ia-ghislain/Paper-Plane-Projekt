@@ -1,6 +1,5 @@
 import pygame, random, sys, shelve
 from pygame.locals import *
-from pprint import pprint
 from collections import OrderedDict
 from time import *
 '''
@@ -12,6 +11,7 @@ BLACK    	= (   0,   0,   0)
 WHITE    	= ( 255, 255, 255)
 BLUE     	= (   0,   0, 255)
 ORANGE   	= ( 252, 177,  54)
+LIGHT_BLUE	= ( 1,   174, 240)
 BROWN    	= ( 91,    0,   0)
 RED 		= (255,    0,   0)
 POS_LEFT 	= 0
@@ -68,39 +68,42 @@ class Player(pygame.sprite.Sprite):
 	score = -2
 	high_score = 0
 	crached = False
-	plane_color = (0,0,0,0) #Nothing by default
+	plane_color = LIGHT_BLUE #Blue by default
 	plane_img = {	
 					"face":pygame.image.load("data/images/plane_face.png"),
 					"left":pygame.image.load("data/images/plane_left.png"),
 					"right":pygame.image.load("data/images/plane_right.png")
 				}
+	background_img = pygame.image.load("data/images/background.png")
+	
 	# Constructor function
-	def __init__(self, x, y,color=ORANGE,high_score=0):
+	def __init__(self, x, y,color=LIGHT_BLUE,high_score=0):
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
 		self.plane_color = color
 		# Set height, width
-		self.image = pygame.Surface([22, 23],pygame.SRCALPHA) # Contain the plane
-		#Fill with ORANGE
-		self.image.fill(self.plane_color) # Nevermind...
-		self.image.set_colorkey(WHITE) # White is the transparent color
-		self.image.blit(self.plane_img["face"],(0,0))
-		self.high_score = high_score # Set the hscore
+		self.image = self.plane_img["face"].convert() #pygame.Surface([22, 23],pygame.SRCALPHA) # Contain the plane
+		self.image.set_colorkey(WHITE) # Ligh is the transparent color
+
 		# Make our top-left corner the passed-in location.
 		self.rect = self.image.get_rect()
 		self.rect.y = y
 		self.rect.x = x
+
+		self.high_score = high_score # Set the hscore
 	def change_player_color(self,color):
 		self.image.fill(color)
 	def changespeed(self, x, y):
 		#Change the speed and coordinates of the player
 		if(not self.crached):
 			if(x<0):
-				self.image.fill(self.plane_color) # Nevermind...
-				self.image.blit(self.plane_img["left"],(0,0))
+				self.image = self.plane_img["left"].convert()
+				# self.image.fill(self.plane_color) # Nevermind...
+				self.image.set_colorkey(WHITE)
 			elif(x>0):
-				self.image.fill(self.plane_color) # Nevermind...
-				self.image.blit(self.plane_img["right"],(0,0))
+				self.image = self.plane_img["right"].convert()
+				# self.image.fill(self.plane_color) # Nevermind...
+				self.image.set_colorkey(WHITE)
 			self.change_x = x
 			self.change_y = y
 
@@ -140,15 +143,16 @@ class Player(pygame.sprite.Sprite):
 				print(self.score)
 				self.score +=1
 
-class Wall(pygame.sprite.Sprite):
-	'''
+class Wall(pygame.sprite.Sprite): 
 	wall_img =	{
-					"top":pygame.image.load("data/images/"), # Need to be defined & drawn
-					"center":pygame.image.load("data/images/"), # Need to be defined & drawn
-					"left":pygame.image.load("data/images/"), # Need to be defined & drawn
-					"right":pygame.image.load("data/images/") # Need to be defined & drawn
-				} 
-	'''
+					"top":pygame.image.load("data/images/platform_top.png"), # Need to be defined & drawn
+					"body":pygame.image.load("data/images/white.png"), # Need to be defined & drawn
+					"bottom":pygame.image.load("data/images/platform_bottom.png"), # Need to be defined & drawn
+					"center":pygame.image.load("data/images/platform_body.png"), # Need to be defined & drawn
+					"left":pygame.image.load("data/images/platform_left_edge.png"), # Need to be defined & drawn
+					"right":pygame.image.load("data/images/platform_right_edge.png"), # Need to be defined & drawn
+					"demo":pygame.image.load("data/images/platform_demo.png") # Need to be defined & drawn
+				}
 	# Wall the player can run into.
 	def __init__(self, x, y, width, height,color=BROWN):
 		# Constructor for the wall that the player can run into.
@@ -156,13 +160,47 @@ class Wall(pygame.sprite.Sprite):
 		super(self.__class__, self).__init__()
 
 		# Make a blue wall, of the size specified in the parameters
-		self.image = pygame.Surface([width, height])
-		self.image.fill(color)
+		self.container = pygame.Surface([width, height]).convert()
+		self.container.fill(BLACK)
+		self.container.set_colorkey(BLACK)
+		# self.wall_img["demo"] = pygame.transform.scale(self.wall_img["demo"].convert(),(width,height))
+
+		top_size = self.wall_img["top"].convert().get_size()
+		bottom_size = self.wall_img["bottom"].convert().get_size()
+		right_size = self.wall_img["right"].convert().get_size()
+		body_size = self.wall_img["body"].convert().get_size()
+
+		for w in xrange(1,width):
+			for h in xrange(1,height):
+				self.draw(w*body_size[0],h*body_size[1],self.container,self.wall_img["body"].convert())
+		if(x<(SCREEN_WIDTH/2)):
+			for i in xrange(0,width):
+				self.draw(i*top_size[0],0,self.container,self.wall_img["top"].convert())
+				self.draw(i*top_size[0],height,self.container,self.wall_img["bottom"].convert())
+			for i in xrange(0,(height/right_size[1])+2):
+				self.draw(width,i*right_size[1],self.container,self.wall_img["right"].convert())
+		else:
+			for i in xrange(0,width):
+				self.draw(i*top_size[0],0,self.container,self.wall_img["top"].convert())
+				self.draw(i*top_size[0],height,self.container,self.wall_img["bottom"].convert())
+			for i in xrange(0,(height/right_size[1])+2):
+				self.draw(0,i*right_size[1],self.container,self.wall_img["left"].convert())
+		
+		self.image = self.container
 
 		# Make our top-left corner the passed-in location.
-		self.rect = self.image.get_rect()
+		self.rect = self.container.get_rect()
 		self.rect.y = y
 		self.rect.x = x
+	
+	def draw(self,x,y,surface,img):
+		img_size = img.convert().get_size()
+		if(x!=0):
+			x = x-img_size[0]
+		if(y!=0):
+			y = y-img_size[1]
+		surface.blit(img,(x,y))
+		
 
 class Menu(object):
 	''' Variables definition '''
@@ -263,7 +301,6 @@ class Menu(object):
 
 def gen_wall(game,pos,slimit=500,color=BROWN):
 	size = random.randint(100,slimit)
-	# pos = random.randint(0,1)
 	if(pos == POS_LEFT):
 		x = 10
 	else:
@@ -271,10 +308,7 @@ def gen_wall(game,pos,slimit=500,color=BROWN):
 	wall = Wall(x, SCREEN_HEIGHT+10, size, 30,color)
 	game.wall_list.add(wall)
 	game.all_sprite_list.add(wall)
-	# 
-	# wall = Wall(10, SCREEN_HEIGHT+10, 400, 10)
-	# self.wall_list.add(wall)
-	# all_sprite_list.add(wall)
+
 
 class Play(object):
 	"""Play the game with some parameters"""
@@ -303,7 +337,7 @@ class Play(object):
 			> Need to decrease wall generation time &
 			> Need to increase gravity speed
 			 (!) Tips : - Use player.changespeed function
-			 			- Use self.wall_gentime variable
+						- Use self.wall_gentime variable
 		'''
 		pass
 
@@ -388,8 +422,17 @@ class Play(object):
 		player.changespeed(0,speed) # Not turning at t=0
 		dt = clock.tick(FPS) # delta of t
 		pos = POS_RIGHT # Start the game @ left position
+		bg = player.background_img.convert_alpha()
+		size = bg.get_rect().size
 		while not done:
 			screen.fill(WHITE) # Clean the screen
+			if(SCREEN_HEIGHT>size[1]): # Is the image smaller than the screen height ?
+				for i in xrange(0,(SCREEN_HEIGHT/size[1])+1): # All right ! How many picture do we need to fill the height
+					if(SCREEN_WIDTH>size[0]): # Is the image smaller than screen's width ?
+						for x in xrange(0,(SCREEN_WIDTH/size[0])+1): # All right ! How many picture do we need to fill the width
+							screen.blit(bg,(x*size[0],i*size[1])) # Fill everything 
+			else:
+				screen.blit(bg,(0,0))
 			tesla += dt
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
@@ -408,7 +451,10 @@ class Play(object):
 			if (tesla > self.wall_gentime):
 				pos = 1-pos #Turn in the opposite dir.
 				tesla = 0 # Reset timer
-				gen_wall(self,pos) #Generate a wall
+				if(pos == POS_RIGHT):
+					gen_wall(self,pos,color=RED) #Generate a wall
+				else:
+					gen_wall(self,pos,color=BLUE) #Generate a wall
 			# Rendering
 			self.all_sprite_list.draw(screen) # Draw everything so that text will be on top
 			self.all_sprite_list.update()
