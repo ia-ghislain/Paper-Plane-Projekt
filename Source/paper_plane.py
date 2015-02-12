@@ -2,6 +2,8 @@ import pygame, random, sys, shelve
 from pygame.locals import *
 from collections import OrderedDict
 from time import *
+sys.path.append("lib")
+import parallax
 '''
 Global constants
 '''
@@ -23,6 +25,7 @@ EVENT_TR = pygame.USEREVENT + 2 # Event turn right
 SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
 IS_FULL_SCREEN = False
+BG_IMG = 'data/images/background.png'
 
 '''
 End of GC
@@ -74,7 +77,6 @@ class Player(pygame.sprite.Sprite):
 					"left":pygame.image.load("data/images/plane_left.png"),
 					"right":pygame.image.load("data/images/plane_right.png")
 				}
-	background_img = pygame.image.load("data/images/background.png")
 	
 	# Constructor function
 	def __init__(self, x, y,color=LIGHT_BLUE,high_score=0):
@@ -145,46 +147,26 @@ class Player(pygame.sprite.Sprite):
 
 class Wall(pygame.sprite.Sprite): 
 	wall_img =	{
-					"top":pygame.image.load("data/images/platform_top.png"), # Need to be defined & drawn
-					"body":pygame.image.load("data/images/white.png"), # Need to be defined & drawn
-					"bottom":pygame.image.load("data/images/platform_bottom.png"), # Need to be defined & drawn
-					"center":pygame.image.load("data/images/platform_body.png"), # Need to be defined & drawn
-					"left":pygame.image.load("data/images/platform_left_edge.png"), # Need to be defined & drawn
-					"right":pygame.image.load("data/images/platform_right_edge.png"), # Need to be defined & drawn
+					"frame_left":pygame.image.load("data/images/frame_left.png"), # Need to be defined & drawn
+					"frame_right":pygame.image.load("data/images/frame_right.png"), # Need to be defined & drawn
+					"lvl_left":pygame.image.load("data/images/lvl_left.png"), # Need to be defined & drawn
+					"lvl_right":pygame.image.load("data/images/lvl_right.png"), # Need to be defined & drawn
 					"demo":pygame.image.load("data/images/platform_demo.png") # Need to be defined & drawn
 				}
 	# Wall the player can run into.
-	def __init__(self, x, y, width, height,color=BROWN):
+	def __init__(self, x, y, width, height,color=WHITE,img=""):
 		# Constructor for the wall that the player can run into.
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
 
 		# Make a blue wall, of the size specified in the parameters
 		self.container = pygame.Surface([width, height]).convert()
-		self.container.fill(BLACK)
-		self.container.set_colorkey(BLACK)
+		self.container.fill(color)
+		if(img in self.wall_img):# If is in the wall_img array
+			self.container.set_colorkey(color) # Make the color transparent
+
+
 		# self.wall_img["demo"] = pygame.transform.scale(self.wall_img["demo"].convert(),(width,height))
-
-		top_size = self.wall_img["top"].convert().get_size()
-		bottom_size = self.wall_img["bottom"].convert().get_size()
-		right_size = self.wall_img["right"].convert().get_size()
-		body_size = self.wall_img["body"].convert().get_size()
-
-		for w in xrange(1,width):
-			for h in xrange(1,height):
-				self.draw(w*body_size[0],h*body_size[1],self.container,self.wall_img["body"].convert())
-		if(x<(SCREEN_WIDTH/2)):
-			for i in xrange(0,width):
-				self.draw(i*top_size[0],0,self.container,self.wall_img["top"].convert())
-				self.draw(i*top_size[0],height,self.container,self.wall_img["bottom"].convert())
-			for i in xrange(0,(height/right_size[1])+2):
-				self.draw(width,i*right_size[1],self.container,self.wall_img["right"].convert())
-		else:
-			for i in xrange(0,width):
-				self.draw(i*top_size[0],0,self.container,self.wall_img["top"].convert())
-				self.draw(i*top_size[0],height,self.container,self.wall_img["bottom"].convert())
-			for i in xrange(0,(height/right_size[1])+2):
-				self.draw(0,i*right_size[1],self.container,self.wall_img["left"].convert())
 		
 		self.image = self.container
 
@@ -389,11 +371,11 @@ class Play(object):
 		''' Obstacles samples
 		self, x, y, width, height,color=BROWN
 		'''
-		wall = Wall(10, SCREEN_HEIGHT/5, 300, 500,BLUE)
+		wall = Wall(10, SCREEN_HEIGHT/5, 300, 530,BLUE)
 		self.wall_list.add(wall)
 		self.all_sprite_list.add(wall)
 		
-		wall = Wall(SCREEN_WIDTH-310, SCREEN_HEIGHT/5, 300, 500,BLUE)
+		wall = Wall(SCREEN_WIDTH-310, SCREEN_HEIGHT/5, 300, 530,BLUE)
 		self.wall_list.add(wall)
 		self.all_sprite_list.add(wall)
 		
@@ -422,17 +404,21 @@ class Play(object):
 		player.changespeed(0,speed) # Not turning at t=0
 		dt = clock.tick(FPS) # delta of t
 		pos = POS_RIGHT # Start the game @ left position
-		bg = player.background_img.convert_alpha()
-		size = bg.get_rect().size
+		# bg = player.background_img.convert_alpha()
+		# size = bg.get_rect().size
 		while not done:
 			screen.fill(WHITE) # Clean the screen
-			if(SCREEN_HEIGHT>size[1]): # Is the image smaller than the screen height ?
-				for i in xrange(0,(SCREEN_HEIGHT/size[1])+1): # All right ! How many picture do we need to fill the height
-					if(SCREEN_WIDTH>size[0]): # Is the image smaller than screen's width ?
-						for x in xrange(0,(SCREEN_WIDTH/size[0])+1): # All right ! How many picture do we need to fill the width
-							screen.blit(bg,(x*size[0],i*size[1])) # Fill everything 
-			else:
-				screen.blit(bg,(0,0))
+			bg.draw(screen)
+			bg.scroll(2,"vertical")
+			# if(SCREEN_HEIGHT>size[1]): # Is the image smaller than the screen height ?
+			# 	for i in xrange(0,(SCREEN_HEIGHT/size[1])+1): # All right ! How many picture do we need to fill the height
+			# 		if(SCREEN_WIDTH>size[0]): # Is the image smaller than screen's width ?
+			# 			for x in xrange(0,(SCREEN_WIDTH/size[0])+1): # All right ! How many picture do we need to fill the width
+			# 				pass
+			# 				screen.blit(bg,(x*size[0],i*size[1])) # Fill everything 
+			# else:
+			# 	pass
+			# 	screen.blit(bg,(0,0))
 			tesla += dt
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
@@ -472,6 +458,8 @@ pygame.mouse.set_visible(False) # Hide the mouse
 
 # Create an 800x600 sized screen
 screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+bg = parallax.ParallaxSurface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RLEACCEL)
+bg.add(BG_IMG, 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
 
 # Set the title of the window
 pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v0.1')
@@ -493,6 +481,8 @@ def change_screen_mode(w,h,fs=False):
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT],pygame.FULLSCREEN)
 		else:
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+		bg.chg_size((SCREEN_WIDTH,SCREEN_HEIGHT))
+		bg.update(BG_IMG, 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
 		show_menu(menu_lst['Options'][show_menu]["Display"][show_menu])
 	return True
 
@@ -582,6 +572,4 @@ menu_lst = OrderedDict({
 
 def main():
 	show_menu(menu_lst)
-	
-	#game.start()
 if __name__ == '__main__': main()
