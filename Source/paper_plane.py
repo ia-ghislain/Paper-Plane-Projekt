@@ -245,6 +245,8 @@ class Menu(object):
 
 		for i in xrange(self.fields_quantity):
 			menu.blit(self.fields[i].pole, self.fields[i].pole_rect)
+			bg.draw(screen)
+			menu.set_colorkey(self.background_color) # Get the bloc invisible
 		self.dest_surface.blit(menu, self.paste_position)
 		return self.selection_position
 
@@ -409,7 +411,7 @@ class Play(object):
 		while not done:
 			screen.fill(WHITE) # Clean the screen
 			bg.draw(screen)
-			bg.scroll(2,"vertical")
+			bg.scroll(2,{"orientation":"vertical","direction":"top"})
 			# if(SCREEN_HEIGHT>size[1]): # Is the image smaller than the screen height ?
 			# 	for i in xrange(0,(SCREEN_HEIGHT/size[1])+1): # All right ! How many picture do we need to fill the height
 			# 		if(SCREEN_WIDTH>size[0]): # Is the image smaller than screen's width ?
@@ -481,7 +483,6 @@ def change_screen_mode(w,h,fs=False):
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT],pygame.FULLSCREEN)
 		else:
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
-		bg.chg_size((SCREEN_WIDTH,SCREEN_HEIGHT))
 		bg.update(BG_IMG, 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
 		show_menu(menu_lst['Options'][show_menu]["Display"][show_menu])
 	return True
