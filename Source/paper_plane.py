@@ -492,7 +492,7 @@ class Play(object):
 
 # Call this function so the Pygame library can initialize itself
 pygame.init()
-pygame.mouse.set_visible(False) # Hide the mouse
+# pygame.mouse.set_visible(False) # Hide the mouse
 
 # Create an 800x600 sized screen
 screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
