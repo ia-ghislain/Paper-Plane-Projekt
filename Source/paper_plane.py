@@ -397,6 +397,8 @@ class Play(object):
 		write("<ESCAPE> Main menu",0,(SCREEN_HEIGHT)-30,WHITE)
 		write("<ENTER> Retry",SCREEN_WIDTH,(SCREEN_HEIGHT)-30,WHITE)
 		del player # Clean the game
+	def set_level(self,lvl=0):
+		self.level = lvl
 
 	def reset_game(self):
 		# List to hold all the sprites
@@ -404,7 +406,8 @@ class Play(object):
 		# Make the walls. (x_pos, y_pos, width, height)
 		self.wall_list = pygame.sprite.Group()
 
-	def start(self):
+	def start(self,lvl=0):
+		self.set_level(lvl)
 		frame_wall_list = pygame.sprite.Group()
 		# Left side wall
 		wall = Wall(0, 0, 10, SCREEN_HEIGHT,BLACK,"frame_left")
@@ -571,7 +574,8 @@ def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
 menu_lst = OrderedDict({
 			'Play !':OrderedDict({
 				show_menu:OrderedDict({
-					"Lvl 0":game.start
+					"Lvl 0":OrderedDict({game.start:(0)}),
+					"Lvl 1":OrderedDict({game.start:(1)})
 				})
 			}),
 			'Options':OrderedDict({
