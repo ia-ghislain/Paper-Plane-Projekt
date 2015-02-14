@@ -1,4 +1,4 @@
-import pygame, random, sys, shelve
+import pygame, random, sys, shelve, os
 from pygame.locals import *
 from collections import OrderedDict
 from time import *
@@ -26,6 +26,7 @@ SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
 IS_FULL_SCREEN = False
 BG_IMG = 'data/images/background.png'
+FONT_PATH = 'data/coders_crux.ttf'
 
 '''
 End of GC
@@ -35,8 +36,11 @@ def newcolour():
 	# any colour but black or white 
 	return (random.randint(10,250), random.randint(10,250), random.randint(10,250))
 
-def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False,use_gravity_center=False): #use_gravity_center, will use the gravity center of the text.
-	myfont = pygame.font.SysFont("None", 30)
+def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False,use_gravity_center=False,font="None",font_size=30): #use_gravity_center, will use the gravity center of the text.
+	if(os.path.isfile(font)):
+		myfont = pygame.font.Font(font, font_size)
+	else:
+		myfont = pygame.font.SysFont(font, font_size)
 	mytext = myfont.render(msg, True, color)
 	mytext_rect = mytext.get_rect()
 	#G = myfont.render("+", True, RED) # UNCOMMENT 4 DEBUG : Display the gravity center
@@ -129,7 +133,7 @@ class Player(pygame.sprite.Sprite):
 		block_hit_list_frame = pygame.sprite.spritecollide(self, self.frame_walls, False)
 		
 		for block in block_hit_list_frame:
-			#If we hit the frame blocks then push us back in the game
+				#If we hit the frame blocks then push us back in the game
 			self.change_x = -(self.change_x)
 		for block in block_hit_list:
 				self.changespeed(0,0) # Stop moves
@@ -154,16 +158,26 @@ class Wall(pygame.sprite.Sprite):
 					"demo":pygame.image.load("data/images/platform_demo.png") # Need to be defined & drawn
 				}
 	# Wall the player can run into.
-	def __init__(self, x, y, width, height,color=WHITE,img=""):
+	def __init__(self, x, y, width, height,color=WHITE,img="",blit_pos="",fit_img = True):
 		# Constructor for the wall that the player can run into.
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
-
+		self.width,self.height = width,height 
 		# Make a blue wall, of the size specified in the parameters
 		self.container = pygame.Surface([width, height]).convert()
 		self.container.fill(color)
 		if(img in self.wall_img):# If is in the wall_img array
 			self.container.set_colorkey(color) # Make the color transparent
+			if(blit_pos == "right"):
+				i_pos = (width,0)
+			elif(isinstance(blit_pos,tuple) and len(blit_pos == 2)):
+				i_pos = blit_pos
+			else: # We assume that it on the default position = left
+				i_pos = (0,0)
+			if(fit_img == True):
+				self.container.blit(pygame.transform.scale(self.wall_img[img], (width,height)),i_pos) # Blit the scaled image
+			else:
+				self.container.blit(self.wall_img[img],i_pos) # Blit the image regardless to the resolution
 
 
 		# self.wall_img["demo"] = pygame.transform.scale(self.wall_img["demo"].convert(),(width,height))
@@ -174,7 +188,14 @@ class Wall(pygame.sprite.Sprite):
 		self.rect = self.container.get_rect()
 		self.rect.y = y
 		self.rect.x = x
-	
+
+	def write(self,msg,x=0,y=0,color=LIGHT_BLUE,font_size=50,font=FONT_PATH): # An alias to the write function
+		if(x == "center"):
+			x = self.width/2
+		if(y == "center"):
+			y = self.height/2
+		write(msg,x,y,color,self.image,True,font=font,font_size=font_size)
+		
 	def draw(self,x,y,surface,img):
 		img_size = img.convert().get_size()
 		if(x!=0):
@@ -189,7 +210,7 @@ class Menu(object):
 	legacy_list = []
 	fields = []
 	font_size = 32
-	font_path = 'data/coders_crux.ttf' # Font being used
+	font_path = FONT_PATH # Font being used
 	font = pygame.font.Font # Init font
 	dest_surface = pygame.Surface # Init surface
 	fields_quantity = 0
@@ -301,6 +322,7 @@ class Play(object):
 	all_sprite_list = pygame.sprite.Group()
 	# Make the walls. (x_pos, y_pos, width, height)
 	wall_list = pygame.sprite.Group()
+	level = 0
 	wall_gentime = 2000 # in ms
 
 	def __init__(self,uparam):
@@ -367,24 +389,26 @@ class Play(object):
 	def start(self):
 		frame_wall_list = pygame.sprite.Group()
 		# Left side wall
-		wall = Wall(0, 0, 10, SCREEN_HEIGHT,BLACK)
+		wall = Wall(0, 0, 10, SCREEN_HEIGHT,BLACK,"frame_left")
 		frame_wall_list.add(wall)
 		self.all_sprite_list.add(wall)
+
 		''' Obstacles samples
 		self, x, y, width, height,color=BROWN
 		'''
-		wall = Wall(10, SCREEN_HEIGHT/5, 300, 530,BLUE)
+		wall = Wall(10, SCREEN_HEIGHT/5, 300, 530,BLUE,"lvl_left")
 		self.wall_list.add(wall)
 		self.all_sprite_list.add(wall)
 		
-		wall = Wall(SCREEN_WIDTH-310, SCREEN_HEIGHT/5, 300, 530,BLUE)
+		wall = Wall(SCREEN_WIDTH-310, SCREEN_HEIGHT/5, 300, 530,BLUE,"lvl_right")
+		wall.write(str(self.level),"center","center",font_size=150)
 		self.wall_list.add(wall)
 		self.all_sprite_list.add(wall)
 		
 		''' End of Obstacles '''
-		
+
 		# Right side wall
-		wall = Wall(SCREEN_WIDTH-10, 0, 10, SCREEN_HEIGHT,BLACK)
+		wall = Wall(SCREEN_WIDTH-10, 0, 10, SCREEN_HEIGHT,BLACK,"frame_right")
 		frame_wall_list.add(wall)
 		self.all_sprite_list.add(wall)
 		
@@ -412,15 +436,6 @@ class Play(object):
 			screen.fill(WHITE) # Clean the screen
 			bg.draw(screen)
 			bg.scroll(2,{"orientation":"vertical","direction":"top"})
-			# if(SCREEN_HEIGHT>size[1]): # Is the image smaller than the screen height ?
-			# 	for i in xrange(0,(SCREEN_HEIGHT/size[1])+1): # All right ! How many picture do we need to fill the height
-			# 		if(SCREEN_WIDTH>size[0]): # Is the image smaller than screen's width ?
-			# 			for x in xrange(0,(SCREEN_WIDTH/size[0])+1): # All right ! How many picture do we need to fill the width
-			# 				pass
-			# 				screen.blit(bg,(x*size[0],i*size[1])) # Fill everything 
-			# else:
-			# 	pass
-			# 	screen.blit(bg,(0,0))
 			tesla += dt
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
