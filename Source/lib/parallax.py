@@ -106,9 +106,11 @@ class ParallaxSurface:
 
 	def scroll(self, offset,opt={"orientation":"horizontal","direction":"left"}):
 		'''scroll moves each surface _offset_ pixels / assigned factor'''
-		
 		if(isinstance(opt, dict)):
-			self.opt.update(opt) #Merge given array & default array
+			self.opt.update(opt) # Merge given array & default array
 		self.scroller = (self.scroller + offset)
 		for lvl in self.levels:
-			lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_width()
+			if(self.opt["orientation"] == "vertical"):
+				lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_height()
+			else:
+				lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_width()

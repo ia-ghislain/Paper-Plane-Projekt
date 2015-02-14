@@ -89,7 +89,7 @@ class Player(pygame.sprite.Sprite):
 		self.plane_color = color
 		# Set height, width
 		self.image = self.plane_img["face"].convert() #pygame.Surface([22, 23],pygame.SRCALPHA) # Contain the plane
-		self.image.set_colorkey(WHITE) # Ligh is the transparent color
+		self.image.set_colorkey(WHITE) # Light is the transparent color
 
 		# Make our top-left corner the passed-in location.
 		self.rect = self.image.get_rect()
@@ -456,7 +456,7 @@ class Play(object):
 		while not done:
 			screen.fill(WHITE) # Clean the screen
 			bg.draw(screen)
-			bg.scroll(3,{"orientation":"vertical","direction":"top"})
+			bg.scroll(1,{"orientation":"vertical","direction":"top"})
 			tesla += dt
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
@@ -575,7 +575,7 @@ menu_lst = OrderedDict({
 			'Play !':OrderedDict({
 				show_menu:OrderedDict({
 					"Lvl 0":OrderedDict({game.start:(0)}),
-					"Lvl 1":OrderedDict({game.start:(1)})
+					"Lvl 2":OrderedDict({game.start:(10)})
 				})
 			}),
 			'Options':OrderedDict({
