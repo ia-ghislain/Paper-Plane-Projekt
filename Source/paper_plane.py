@@ -575,7 +575,7 @@ menu_lst = OrderedDict({
 			'Play !':OrderedDict({
 				show_menu:OrderedDict({
 					"Lvl 0":OrderedDict({game.start:(0)}),
-					"Lvl 2":OrderedDict({game.start:(10)})
+					"Lvl 2":OrderedDict({game.start:(2)}),
 				})
 			}),
 			'Options':OrderedDict({
