@@ -146,7 +146,7 @@ class Player(pygame.sprite.Sprite):
 			# write(str(self.rect.y),10,0)
 			# write(str(block.rect.y),10,30)
 			if(block.rect.y==self.rect.y): #Is the player @ the same line as block ?
-				print(self.score)
+				# print(self.score)
 				self.score +=1
 
 class Wall(pygame.sprite.Sprite): 
@@ -154,6 +154,10 @@ class Wall(pygame.sprite.Sprite):
 					"frame_left":pygame.image.load("data/images/frame_left.png"), # Need to be defined & drawn
 					"frame_right":pygame.image.load("data/images/frame_right.png"), # Need to be defined & drawn
 					"lvl_left":pygame.image.load("data/images/lvl_left.png"), # Need to be defined & drawn
+					"platform_left_e":pygame.image.load("data/images/platform_left_edge.png"), # Need to be defined & drawn
+					"platform_left_b":pygame.image.load("data/images/platform_body_left.png"), # Need to be defined & drawn
+					"platform_right_e":pygame.image.load("data/images/platform_right_edge.png"), # Need to be defined & drawn
+					"platform_right_b":pygame.image.load("data/images/platform_body_right.png"), # Need to be defined & drawn
 					"lvl_right":pygame.image.load("data/images/lvl_right.png"), # Need to be defined & drawn
 					"demo":pygame.image.load("data/images/platform_demo.png") # Need to be defined & drawn
 				}
@@ -178,6 +182,20 @@ class Wall(pygame.sprite.Sprite):
 				self.container.blit(pygame.transform.scale(self.wall_img[img], (width,height)),i_pos) # Blit the scaled image
 			else:
 				self.container.blit(self.wall_img[img],i_pos) # Blit the image regardless to the resolution
+		elif(img == "wall_left"):
+			pre_img_size = self.wall_img["platform_right_e"].get_size()
+			prb_img_size = self.wall_img["platform_right_b"].get_size()
+			self.container.set_colorkey(color) # Make the color transparent
+			self.container.blit(self.wall_img["platform_right_e"],(width-pre_img_size[0],0))
+			for i in xrange(1,(width/prb_img_size[0])+2):
+				self.container.blit(self.wall_img["platform_right_b"],(width-pre_img_size[0]-i*prb_img_size[0],0))
+		elif(img == "wall_right"):
+			ple_img_size = self.wall_img["platform_left_e"].get_size()
+			plb_img_size = self.wall_img["platform_left_b"].get_size()
+			self.container.set_colorkey(color) # Make the color transparent
+			self.container.blit(self.wall_img["platform_left_e"],(0,0))
+			for i in xrange(0,(width/plb_img_size[0])+1):
+				self.container.blit(self.wall_img["platform_left_b"],(i*plb_img_size[0]+ple_img_size[0],0))
 
 
 		# self.wall_img["demo"] = pygame.transform.scale(self.wall_img["demo"].convert(),(width,height))
@@ -304,13 +322,13 @@ class Menu(object):
 		mx, my = self.paste_position
 		self.paste_position = (x+mx, y+my)
 
-def gen_wall(game,pos,slimit=500,color=BROWN):
+def gen_wall(game,pos,slimit=500,color=BROWN,img=""):
 	size = random.randint(100,slimit)
 	if(pos == POS_LEFT):
 		x = 10
 	else:
 		x = SCREEN_WIDTH-size-10
-	wall = Wall(x, SCREEN_HEIGHT+10, size, 30,color)
+	wall = Wall(x, SCREEN_HEIGHT+10, size, 30,color,img=img)
 	game.wall_list.add(wall)
 	game.all_sprite_list.add(wall)
 
@@ -435,7 +453,7 @@ class Play(object):
 		while not done:
 			screen.fill(WHITE) # Clean the screen
 			bg.draw(screen)
-			bg.scroll(2,{"orientation":"vertical","direction":"top"})
+			bg.scroll(3,{"orientation":"vertical","direction":"top"})
 			tesla += dt
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
@@ -455,9 +473,9 @@ class Play(object):
 				pos = 1-pos #Turn in the opposite dir.
 				tesla = 0 # Reset timer
 				if(pos == POS_RIGHT):
-					gen_wall(self,pos,color=RED) #Generate a wall
+					gen_wall(self,pos,color=RED,img="wall_right") #Generate a wall
 				else:
-					gen_wall(self,pos,color=BLUE) #Generate a wall
+					gen_wall(self,pos,color=BLUE,img="wall_left") #Generate a wall
 			# Rendering
 			self.all_sprite_list.draw(screen) # Draw everything so that text will be on top
 			self.all_sprite_list.update()

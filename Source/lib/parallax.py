@@ -16,7 +16,7 @@
 #    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-import pygame,pprint
+import pygame
 
 class _subsurface:
 	'''Container class for subsurface'''
