@@ -1,8 +1,9 @@
-import pygame, random, sys, shelve
+import pygame, random, sys, shelve, os
 from pygame.locals import *
-# from pprint import pprint
 from collections import OrderedDict
 from time import *
+sys.path.append("lib")
+import parallax
 '''
 Global constants
 '''
@@ -12,6 +13,7 @@ BLACK    	= (   0,   0,   0)
 WHITE    	= ( 255, 255, 255)
 BLUE     	= (   0,   0, 255)
 ORANGE   	= ( 252, 177,  54)
+LIGHT_BLUE	= ( 1,   174, 240)
 BROWN    	= ( 91,    0,   0)
 RED 		= (255,    0,   0)
 POS_LEFT 	= 0
@@ -24,6 +26,8 @@ EVENT_TR = pygame.USEREVENT + 2 # Event turn right
 SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
 IS_FULL_SCREEN = False
+BG_IMG = 'data/images/background.png'
+FONT_PATH = 'data/coders_crux.ttf'
 
 '''
 End of GC
@@ -33,8 +37,11 @@ def newcolour():
 	# any colour but black or white 
 	return (random.randint(10,250), random.randint(10,250), random.randint(10,250))
 
-def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False,use_gravity_center=False): #use_gravity_center, will use the gravity center of the text.
-	myfont = pygame.font.SysFont("None", 30)
+def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False,use_gravity_center=False,font="None",font_size=30): #use_gravity_center, will use the gravity center of the text.
+	if(os.path.isfile(font)):
+		myfont = pygame.font.Font(font, font_size)
+	else:
+		myfont = pygame.font.SysFont(font, font_size)
 	mytext = myfont.render(msg, True, color)
 	mytext_rect = mytext.get_rect()
 	#G = myfont.render("+", True, RED) # UNCOMMENT 4 DEBUG : Display the gravity center
@@ -69,26 +76,41 @@ class Player(pygame.sprite.Sprite):
 	score = -2
 	high_score = 0
 	crached = False
-
+	plane_color = LIGHT_BLUE #Blue by default
+	plane_img = {	
+					"face":pygame.image.load("data/images/plane_face.png"),
+					"left":pygame.image.load("data/images/plane_left.png"),
+					"right":pygame.image.load("data/images/plane_right.png")
+				}
+	
 	# Constructor function
-	def __init__(self, x, y,color=ORANGE,high_score=0):
+	def __init__(self, x, y,color=LIGHT_BLUE,high_score=0):
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
-
+		self.plane_color = color
 		# Set height, width
-		self.image = pygame.Surface([15, 15])
-		#Fill with ORANGE
-		self.image.fill(color)
-		self.high_score = high_score # Set the hscore
+		self.image = self.plane_img["face"].convert() #pygame.Surface([22, 23],pygame.SRCALPHA) # Contain the plane
+		self.image.set_colorkey(WHITE) # Light is the transparent color
+
 		# Make our top-left corner the passed-in location.
 		self.rect = self.image.get_rect()
 		self.rect.y = y
 		self.rect.x = x
+
+		self.high_score = high_score # Set the hscore
 	def change_player_color(self,color):
 		self.image.fill(color)
 	def changespeed(self, x, y):
 		#Change the speed and coordinates of the player
 		if(not self.crached):
+			if(x<0):
+				self.image = self.plane_img["left"].convert()
+				# self.image.fill(self.plane_color) # Nevermind...
+				self.image.set_colorkey(WHITE)
+			elif(x>0):
+				self.image = self.plane_img["right"].convert()
+				# self.image.fill(self.plane_color) # Nevermind...
+				self.image.set_colorkey(WHITE)
 			self.change_x = x
 			self.change_y = y
 	def getspeed(self):
@@ -114,7 +136,7 @@ class Player(pygame.sprite.Sprite):
 		block_hit_list_frame = pygame.sprite.spritecollide(self, self.frame_walls, False)
 		
 		for block in block_hit_list_frame:
-			#If we hit the frame blocks then push us back in the game
+				#If we hit the frame blocks then push us back in the game
 			self.change_x = -(self.change_x)
 		for block in block_hit_list:
 				self.changespeed(0,0) # Stop moves
@@ -127,34 +149,92 @@ class Player(pygame.sprite.Sprite):
 			# write(str(self.rect.y),10,0)
 			# write(str(block.rect.y),10,30)
 			if(block.rect.y==self.rect.y): #Is the player @ the same line as block ?
-				print(self.score)
+				# print(self.score)
 				self.score +=1
 				# ev = pygame.event.Event(EVENT_WALL_PASSED, {'score':self.score}) # Create the event
 				# pygame.event.post(ev) # Broadcast the event
 
 
-class Wall(pygame.sprite.Sprite):
+class Wall(pygame.sprite.Sprite): 
+	wall_img =	{
+					"frame_left":pygame.image.load("data/images/frame_left.png"), # Need to be defined & drawn
+					"frame_right":pygame.image.load("data/images/frame_right.png"), # Need to be defined & drawn
+					"lvl_left":pygame.image.load("data/images/lvl_left.png"), # Need to be defined & drawn
+					"platform_left_e":pygame.image.load("data/images/platform_left_edge.png"), # Need to be defined & drawn
+					"platform_left_b":pygame.image.load("data/images/platform_body_left.png"), # Need to be defined & drawn
+					"platform_right_e":pygame.image.load("data/images/platform_right_edge.png"), # Need to be defined & drawn
+					"platform_right_b":pygame.image.load("data/images/platform_body_right.png"), # Need to be defined & drawn
+					"lvl_right":pygame.image.load("data/images/lvl_right.png"), # Need to be defined & drawn
+					"demo":pygame.image.load("data/images/platform_demo.png") # Need to be defined & drawn
+				}
 	# Wall the player can run into.
-	def __init__(self, x, y, width, height,color=BROWN):
+	def __init__(self, x, y, width, height,color=WHITE,img="",blit_pos="",fit_img = True):
 		# Constructor for the wall that the player can run into.
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
-
+		self.width,self.height = width,height 
 		# Make a blue wall, of the size specified in the parameters
-		self.image = pygame.Surface([width, height])
-		self.image.fill(color)
+		self.container = pygame.Surface([width, height]).convert()
+		self.container.fill(color)
+		if(img in self.wall_img):# If is in the wall_img array
+			self.container.set_colorkey(color) # Make the color transparent
+			if(blit_pos == "right"):
+				i_pos = (width,0)
+			elif(isinstance(blit_pos,tuple) and len(blit_pos == 2)):
+				i_pos = blit_pos
+			else: # We assume that it on the default position = left
+				i_pos = (0,0)
+			if(fit_img == True):
+				self.container.blit(pygame.transform.scale(self.wall_img[img], (width,height)),i_pos) # Blit the scaled image
+			else:
+				self.container.blit(self.wall_img[img],i_pos) # Blit the image regardless to the resolution
+		elif(img == "wall_left"):
+			pre_img_size = self.wall_img["platform_right_e"].get_size()
+			prb_img_size = self.wall_img["platform_right_b"].get_size()
+			self.container.set_colorkey(color) # Make the color transparent
+			self.container.blit(self.wall_img["platform_right_e"],(width-pre_img_size[0],0))
+			for i in xrange(1,(width/prb_img_size[0])+2):
+				self.container.blit(self.wall_img["platform_right_b"],(width-pre_img_size[0]-i*prb_img_size[0],0))
+		elif(img == "wall_right"):
+			ple_img_size = self.wall_img["platform_left_e"].get_size()
+			plb_img_size = self.wall_img["platform_left_b"].get_size()
+			self.container.set_colorkey(color) # Make the color transparent
+			self.container.blit(self.wall_img["platform_left_e"],(0,0))
+			for i in xrange(0,(width/plb_img_size[0])+1):
+				self.container.blit(self.wall_img["platform_left_b"],(i*plb_img_size[0]+ple_img_size[0],0))
+
+
+		# self.wall_img["demo"] = pygame.transform.scale(self.wall_img["demo"].convert(),(width,height))
+		
+		self.image = self.container
 
 		# Make our top-left corner the passed-in location.
-		self.rect = self.image.get_rect()
+		self.rect = self.container.get_rect()
 		self.rect.y = y
 		self.rect.x = x
+
+	def write(self,msg,x=0,y=0,color=LIGHT_BLUE,font_size=50,font=FONT_PATH): # An alias to the write function
+		if(x == "center"):
+			x = self.width/2
+		if(y == "center"):
+			y = self.height/2
+		write(msg,x,y,color,self.image,True,font=font,font_size=font_size)
+		
+	def draw(self,x,y,surface,img):
+		img_size = img.convert().get_size()
+		if(x!=0):
+			x = x-img_size[0]
+		if(y!=0):
+			y = y-img_size[1]
+		surface.blit(img,(x,y))
+		
 
 class Menu(object):
 	''' Variables definition '''
 	legacy_list = []
 	fields = []
 	font_size = 32
-	font_path = 'data/coders_crux.ttf' # Font being used
+	font_path = FONT_PATH # Font being used
 	font = pygame.font.Font # Init font
 	dest_surface = pygame.Surface # Init surface
 	fields_quantity = 0
@@ -210,6 +290,8 @@ class Menu(object):
 
 		for i in xrange(self.fields_quantity):
 			menu.blit(self.fields[i].pole, self.fields[i].pole_rect)
+			bg.draw(screen)
+			menu.set_colorkey(self.background_color) # Get the bloc invisible
 		self.dest_surface.blit(menu, self.paste_position)
 		return self.selection_position
 
@@ -246,20 +328,16 @@ class Menu(object):
 		mx, my = self.paste_position
 		self.paste_position = (x+mx, y+my)
 
-def gen_wall(game,pos,slimit=500,color=BROWN):
+def gen_wall(game,pos,slimit=500,color=BROWN,img=""):
 	size = random.randint(100,slimit)
-	# pos = random.randint(0,1)
 	if(pos == POS_LEFT):
 		x = 10
 	else:
 		x = SCREEN_WIDTH-size-10
-	wall = Wall(x, SCREEN_HEIGHT+10, size, 30,color)
+	wall = Wall(x, SCREEN_HEIGHT+10, size, 30,color,img=img)
 	game.wall_list.add(wall)
 	game.all_sprite_list.add(wall)
-	# 
-	# wall = Wall(10, SCREEN_HEIGHT+10, 400, 10)
-	# self.wall_list.add(wall)
-	# all_sprite_list.add(wall)
+
 
 class Play(object):
 	"""Play the game with some parameters"""
@@ -269,6 +347,7 @@ class Play(object):
 	all_sprite_list = pygame.sprite.Group()
 	# Make the walls. (x_pos, y_pos, width, height)
 	wall_list = pygame.sprite.Group()
+	level = 0
 	wall_gentime = 2000 # in ms
 
 	def __init__(self,uparam):
@@ -299,6 +378,7 @@ class Play(object):
 			 (!) Tips : - Use player.changespeed function
 			 			- Use player.getspeed function
 			 			- Use self.wall_gentime variable
+						- Use self.wall_gentime variable
 		'''
 		self.wall_gentime = self.wall_gentime*(1-0.105)
 		speed = player.getspeed()
@@ -339,6 +419,8 @@ class Play(object):
 		write("<ESCAPE> Main menu",0,(SCREEN_HEIGHT)-30,WHITE)
 		write("<ENTER> Retry",SCREEN_WIDTH,(SCREEN_HEIGHT)-30,WHITE)
 		del player # Clean the game
+	def set_level(self,lvl=0):
+		self.level = lvl
 
 	def reset_game(self):
 		# List to hold all the sprites
@@ -347,26 +429,30 @@ class Play(object):
 		self.wall_list = pygame.sprite.Group()
 		self.param = self.iparam
 
-	def start(self):
+	def start(self,lvl=0):
+		self.set_level(lvl)
 		frame_wall_list = pygame.sprite.Group()
-		''' 
-		Initial walls
-		'''
-		#Left border wall
-		wall = Wall(0, 0, 10, SCREEN_HEIGHT,BLACK)
+		# Left side wall
+		wall = Wall(0, 0, 10, SCREEN_HEIGHT,BLACK,"frame_left")
 		frame_wall_list.add(wall)
 		self.all_sprite_list.add(wall)
-		# Blue left wall
-		wall = Wall(10, SCREEN_HEIGHT/5, 300, 500,BLUE)
-		self.wall_list.add(wall)
-		self.all_sprite_list.add(wall)
-		# Right left wall
-		wall = Wall(SCREEN_WIDTH-310, SCREEN_HEIGHT/5, 300, 500,BLUE)
-		self.wall_list.add(wall)
-		self.all_sprite_list.add(wall)
 
-		# Right border wall
-		wall = Wall(SCREEN_WIDTH-10, 0, 10, SCREEN_HEIGHT,BLACK)
+		''' Obstacles samples
+		self, x, y, width, height,color=BROWN
+		'''
+		wall = Wall(10, SCREEN_HEIGHT/5, 300, 530,BLUE,"lvl_left")
+		self.wall_list.add(wall)
+		self.all_sprite_list.add(wall)
+		
+		wall = Wall(SCREEN_WIDTH-310, SCREEN_HEIGHT/5, 300, 530,BLUE,"lvl_right")
+		wall.write(str(self.level),"center","center",font_size=150)
+		self.wall_list.add(wall)
+		self.all_sprite_list.add(wall)
+		
+		''' End of Obstacles '''
+
+		# Right side wall
+		wall = Wall(SCREEN_WIDTH-10, 0, 10, SCREEN_HEIGHT,BLACK,"frame_right")
 		frame_wall_list.add(wall)
 		self.all_sprite_list.add(wall)
 		''' End of Obstacles '''
@@ -387,8 +473,12 @@ class Play(object):
 		player.changespeed(0,self.param["speed"]) # Not turning at t=0
 		dt = clock.tick(FPS) # delta of t
 		pos = POS_RIGHT # Start the game @ left position
+		# bg = player.background_img.convert_alpha()
+		# size = bg.get_rect().size
 		while not done:
 			screen.fill(WHITE) # Clean the screen
+			bg.draw(screen)
+			bg.scroll(1,{"orientation":"vertical","direction":"top"})
 			tesla += dt
 			dtesla += dt
 			for event in pygame.event.get():
@@ -416,7 +506,11 @@ class Play(object):
 			if (tesla > self.wall_gentime):
 				pos = 1-pos #Turn in the opposite dir. Generate a wall on the other side.
 				tesla = 0 # Reset timer
-				gen_wall(self,pos) #Generate a wall
+				if(pos == POS_RIGHT):
+					gen_wall(self,pos,color=RED,img="wall_right") #Generate a wall
+				else:
+					gen_wall(self,pos,color=BLUE,img="wall_left") #Generate a wall
+					
 			if(dtesla > self.param["dynamic_speed_time_interval"]):
 				dtesla = 0
 				self.increase_speed(player,self.param["dynamic_speed_factor"])
@@ -433,9 +527,12 @@ class Play(object):
 
 # Call this function so the Pygame library can initialize itself
 pygame.init()
+# pygame.mouse.set_visible(False) # Hide the mouse
 
 # Create an 800x600 sized screen
 screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+bg = parallax.ParallaxSurface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RLEACCEL)
+bg.add(BG_IMG, 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
 
 # Set the title of the window
 pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v0.1')
@@ -457,6 +554,7 @@ def change_screen_mode(w,h,fs=False):
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT],pygame.FULLSCREEN)
 		else:
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+		bg.update(BG_IMG, 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
 		show_menu(menu_lst['Options'][show_menu]["Display"][show_menu])
 	return True
 
@@ -511,7 +609,8 @@ def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
 menu_lst = OrderedDict({
 			'Play !':OrderedDict({
 				show_menu:OrderedDict({
-					"Lvl 0":game.start
+					"Lvl 0":OrderedDict({game.start:(0)}),
+					"Lvl 2":OrderedDict({game.start:(2)}),
 				})
 			}),
 			'Options':OrderedDict({
@@ -546,6 +645,4 @@ menu_lst = OrderedDict({
 
 def main():
 	show_menu(menu_lst)
-	
-	#game.start()
 if __name__ == '__main__': main()

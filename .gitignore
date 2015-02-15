@@ -6,6 +6,9 @@ __pycache__/
 *.so
 # Paper Plane File
 *.ppp
+Thumbs.db
+demo.py
+
 
 # Distribution / packaging
 .Python
@@ -15,7 +18,6 @@ develop-eggs/
 dist/
 downloads/
 eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -54,3 +56,5 @@ docs/_build/
 
 # PyBuilder
 target/
+Source/data/images/Thumbs.db
+*.db
