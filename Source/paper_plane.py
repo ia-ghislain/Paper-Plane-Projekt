@@ -357,10 +357,10 @@ class Play(object):
 					"pcolor":ORANGE,
 					"dynamic_speed":False, # Does the plane dynamicly
 					"dynamic_speed_factor":1,
-					"dynamic_speed_time_interval":3000, # Use to launch the function every x seconds
+					"dynamic_speed_time_interval":30000, # Use to launch the function every x seconds
 					"speed":1, # Speed of the airplane
 					"tspeed":3, # Turning speed of the airplane
-					"action_delay":True, # Do we add delay ?
+					"action_delay":False, # Do we add delay ?
 					"action_delay_time":250, # 25ms. If you want a delay of 0, then set action_delay to False
 					"wall_gentime":2000
 				}
@@ -380,12 +380,14 @@ class Play(object):
 			 			- Use self.wall_gentime variable
 						- Use self.wall_gentime variable
 		'''
-		self.wall_gentime = self.wall_gentime*(1-0.105)
-		speed = player.getspeed()
-		self.param["speed"] = self.param["speed"]+1
-		player.changespeed(speed[0],self.param["speed"])
-		self.param["tspeed"] = self.param["tspeed"]+1
+		s = player.getspeed()
+		self.param["speed"] += factor
+		self.param["tspeed"] += factor
+		player.changespeed(s[0],self.param["speed"])
+		self.wall_gentime = factor*(1910.950027*pow(self.param["speed"],-0.7562482036))
+		print s
 		print self.wall_gentime
+		print 'Launched'
 
 
 	def set_high_score(self,player,file_name="score.ppp"):
@@ -505,11 +507,13 @@ class Play(object):
 							pygame.time.set_timer(EVENT_TR,self.param["action_delay_time"]) #25 ms before the action is realised
 			if (tesla > self.wall_gentime):
 				pos = 1-pos #Turn in the opposite dir. Generate a wall on the other side.
-				tesla = 0 # Reset timer
 				if(pos == POS_RIGHT):
+					print 'Gen right wall'
 					gen_wall(self,pos,color=RED,img="wall_right") #Generate a wall
 				else:
+					print 'Gen left wall'
 					gen_wall(self,pos,color=BLUE,img="wall_left") #Generate a wall
+				tesla = 0 # Reset timer
 					
 			if(dtesla > self.param["dynamic_speed_time_interval"]):
 				dtesla = 0
