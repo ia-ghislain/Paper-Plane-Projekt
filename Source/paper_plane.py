@@ -25,7 +25,12 @@ EVENT_TR = pygame.USEREVENT + 2 # Event turn right
 SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
 IS_FULL_SCREEN = False
-BG_IMG = 'data/images/background.png'
+BG = {
+		"clouds":'data/images/background.png',
+	  	"factory":'data/images/factory_background.png',
+	  	"cloud_to_factory":'data/images/gradient.png'
+	  }
+
 FONT_PATH = 'data/coders_crux.ttf'
 
 '''
@@ -497,7 +502,7 @@ pygame.init()
 # Create an 800x600 sized screen
 screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
 bg = parallax.ParallaxSurface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RLEACCEL)
-bg.add(BG_IMG, 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
+bg.add(BG["clouds"], 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
 
 # Set the title of the window
 pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v0.1')
@@ -519,7 +524,7 @@ def change_screen_mode(w,h,fs=False):
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT],pygame.FULLSCREEN)
 		else:
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
-		bg.update(BG_IMG, 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
+		bg.update(BG["clouds"], 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
 		show_menu(menu_lst['Options'][show_menu]["Display"][show_menu])
 	return True
 
