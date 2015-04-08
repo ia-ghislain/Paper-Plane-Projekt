@@ -48,7 +48,7 @@ def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False,use_gravity_center=F
 		myfont = pygame.font.SysFont(font, font_size)
 	mytext = myfont.render(msg, True, color)
 	mytext_rect = mytext.get_rect()
-	#G = myfont.render("+", True, RED) # UNCOMMENT 4 DEBUG : Display the gravity center
+	# G = myfont.render("+", True, RED) # UNCOMMENT 4 DEBUG : Display the gravity center
 	size = list(myfont.size(msg))
 	if(x <= SCREEN_WIDTH/2):
 		x = x+10
@@ -61,7 +61,7 @@ def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False,use_gravity_center=F
 			screen.blit(mytext,mytext_rect)
 		else:
 			screen.blit(mytext,(x,y))
-		#screen.blit(G,(x,y-10)) # UNCOMMENT 4 DEBUG : Display the gravity center
+		# screen.blit(G,(x,y-10)) # UNCOMMENT 4 DEBUG : Display the gravity center
 	else:
 		if(use_gravity_center==True):
 			s.blit(mytext,mytext_rect)
@@ -457,6 +457,9 @@ class Play(object):
 		dt = clock.tick(FPS) # delta of t
 		pos = POS_RIGHT # Start the game @ left position
 		# bg = player.background_img.convert_alpha()
+		bg.add_transition(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+		bg.add_transition(BG["cloud_to_factory"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+		bg.enable_transition()
 		# size = bg.get_rect().size
 		while not done:
 			screen.fill(WHITE) # Clean the screen

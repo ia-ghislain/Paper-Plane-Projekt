@@ -1,5 +1,5 @@
-'''A simple parallax rendering module'''
 # -*- coding: utf-8 -*-
+'''A simple parallax rendering module'''
 
 #    Copyright (C) , 2012 Åke Forslund (ake.forslund@gmail.com)
 #
@@ -30,6 +30,9 @@ class ParallaxSurface:
 	def __init__(self, size, colorkey_flags = 0):
 		self.colorkey_flags = colorkey_flags
 		self.scroller = 0
+		self.transition_img = []
+		self.transition_active = False
+		self.transition_i = 0
 		self.levels = []
 		self.levels_id = {}
 		self.size = size
@@ -71,6 +74,47 @@ class ParallaxSurface:
 		self.levels_id[image_path] = len(self.levels)
 		self.levels.append(_subsurface(image, scroll_factor))
 
+	def add_transition(self, image_path, scroll_factor,size = (0,0)):
+		'''Adds a parallax level, first added level is the
+		   deepest level, i.e. furthest back into the \"screen\".
+
+		   image_path is the path to the image to be used
+		   scroll_factor is the slowdown factor for this parallax level.'''
+		try:
+			image = (pygame.image.load(image_path))
+		except:
+			message = "couldn't open image:" + image_path
+			raise SystemExit, message
+		if ".png" in image_path:
+			image = image.convert_alpha()
+		else:
+			image = image.convert()
+		if len(self.levels) > 0:
+			image.set_colorkey((0xff, 0x00, 0xea), self.colorkey_flags)
+		if(size[0] != 0 and size[1] != 0):
+			image = pygame.transform.scale(image, size)
+			self.chg_size(size)
+		self.transition_img.append(_subsurface(image, scroll_factor))
+	
+	def remove_transition(self,elem_id=False):
+		if(elem_id == False or elem_id not in self.transition_img):
+			self.transition_img = []
+		else:
+			del self.transition_img[elem_id]
+
+	def enable_transition(self):
+		self.transition_active = True
+
+	def disable_transition(self):
+		self.transition_active = False
+
+	def reset_transition(self):
+		self.disable_transition()
+		self.remove_transition()
+
+	def is_transition_active(self):
+		return self.transition_active
+
 	def add_colorkeyed_surface(self, surface, scroll_factor,color_key = (0xff, 0x00, 0xea)):
 		surface = surface.convert()
 		if len(self.levels) > 0:
@@ -88,29 +132,54 @@ class ParallaxSurface:
 			provided as argument '''
 		s_width  = self.size[0]
 		s_height = self.size[1]
-		for lvl in self.levels:
-			if(self.opt["orientation"] == "vertical"):
-				if(self.opt["direction"] == "bottom"):
-					surface.blit(lvl.surface, (0, 0), (0, -lvl.scroll, s_width, s_height))
-					surface.blit(lvl.surface, (0, lvl.scroll - lvl.surface.get_height()))
-				else:
-					surface.blit(lvl.surface, (0, 0), (0, lvl.scroll, s_width, s_height))
-					surface.blit(lvl.surface, (0,lvl.surface.get_height() - lvl.scroll))
+		if(self.is_transition_active()):
+			lvl = self.transition_img[self.transition_i]
+			self.__blit(lvl,surface,s_width,s_height)
+			if(len(self.transition_img) >= 1):
+				pass
+				# print lvl.surface
+				self.transition_i += 1
+				if(self.transition_i >= 1):
+					self.transition_i = 1
+				# self.remove_transition(0)
 			else:
-				if(self.opt["direction"] == "left"):
-					surface.blit(lvl.surface, (0, 0), (lvl.scroll, 0, s_width, s_height))
-					surface.blit(lvl.surface, (lvl.surface.get_width() - lvl.scroll, 0),(0, 0, lvl.scroll, s_height))
-				else:
-					surface.blit(lvl.surface, (0, 0), (-lvl.scroll, 0, s_width, s_height))
-					surface.blit(lvl.surface, (lvl.scroll - lvl.surface.get_width(), 0),(0, 0, -lvl.scroll, s_height))
+				pass
+				# self.reset_transition()
+		else:
+			for lvl in self.levels:
+				self.__blit(lvl,surface,s_width,s_height)
+
+	def __blit(self,lvl,surface,s_width,s_height):
+		if(self.opt["orientation"] == "vertical"):
+			if(self.opt["direction"] == "bottom"):
+				surface.blit(lvl.surface, (0, 0), (0, -lvl.scroll, s_width, s_height))
+				surface.blit(lvl.surface, (0, lvl.scroll - lvl.surface.get_height()))
+			else:
+				surface.blit(lvl.surface, (0, 0), (0, lvl.scroll, s_width, s_height))
+				surface.blit(lvl.surface, (0,lvl.surface.get_height() - lvl.scroll))
+		else:
+			if(self.opt["direction"] == "left"):
+				surface.blit(lvl.surface, (0, 0), (lvl.scroll, 0, s_width, s_height))
+				surface.blit(lvl.surface, (lvl.surface.get_width() - lvl.scroll, 0),(0, 0, lvl.scroll, s_height))
+			else:
+				surface.blit(lvl.surface, (0, 0), (-lvl.scroll, 0, s_width, s_height))
+				surface.blit(lvl.surface, (lvl.scroll - lvl.surface.get_width(), 0),(0, 0, -lvl.scroll, s_height))
 
 	def scroll(self, offset,opt={"orientation":"horizontal","direction":"left"}):
 		'''scroll moves each surface _offset_ pixels / assigned factor'''
 		if(isinstance(opt, dict)):
 			self.opt.update(opt) # Merge given array & default array
 		self.scroller = (self.scroller + offset)
-		for lvl in self.levels:
+		if(self.is_transition_active()):
+			lvl = self.transition_img[0]
 			if(self.opt["orientation"] == "vertical"):
 				lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_height()
 			else:
 				lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_width()
+		else:
+			for lvl in self.levels:
+				# print lvl.scroll
+				if(self.opt["orientation"] == "vertical"):
+					lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_height()
+				else:
+					lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_width()
