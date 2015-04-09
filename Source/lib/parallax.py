@@ -94,7 +94,9 @@ class ParallaxSurface:
 		if(size[0] != 0 and size[1] != 0):
 			image = pygame.transform.scale(image, size)
 			self.chg_size(size)
-		self.transition_img.append(_subsurface(image, scroll_factor))
+		p = _subsurface(image, scroll_factor)
+		p.scroll = 100
+		self.transition_img.append(p)
 	
 	def remove_transition(self,elem_id=False):
 		if(elem_id == False or elem_id not in self.transition_img):
@@ -133,14 +135,17 @@ class ParallaxSurface:
 		s_width  = self.size[0]
 		s_height = self.size[1]
 		if(self.is_transition_active()):
-			lvl = self.transition_img[self.transition_i]
-			self.__blit(lvl,surface,s_width,s_height)
-			if(len(self.transition_img) >= 1):
-				pass
+			#lvl = self.transition_img[self.transition_i]
+			for lvl in self.transition_img:
+				self.__blit(lvl,surface,s_width,s_height)
+			#print self.transition_img
+			#self.__blit(lvl,surface,s_width,s_height)
+			#if(len(self.transition_img) >= 1):
+			#	pass
 				# print lvl.surface
-				self.transition_i += 1
-				if(self.transition_i >= 1):
-					self.transition_i = 1
+			#	self.transition_i += 1
+			#	if(self.transition_i >= 1):
+			#		self.transition_i = 1
 				# self.remove_transition(0)
 			else:
 				pass
@@ -150,11 +155,14 @@ class ParallaxSurface:
 				self.__blit(lvl,surface,s_width,s_height)
 
 	def __blit(self,lvl,surface,s_width,s_height):
+		print lvl
 		if(self.opt["orientation"] == "vertical"):
 			if(self.opt["direction"] == "bottom"):
+				pass
 				surface.blit(lvl.surface, (0, 0), (0, -lvl.scroll, s_width, s_height))
 				surface.blit(lvl.surface, (0, lvl.scroll - lvl.surface.get_height()))
 			else:
+				pass
 				surface.blit(lvl.surface, (0, 0), (0, lvl.scroll, s_width, s_height))
 				surface.blit(lvl.surface, (0,lvl.surface.get_height() - lvl.scroll))
 		else:
@@ -171,11 +179,11 @@ class ParallaxSurface:
 			self.opt.update(opt) # Merge given array & default array
 		self.scroller = (self.scroller + offset)
 		if(self.is_transition_active()):
-			lvl = self.transition_img[0]
-			if(self.opt["orientation"] == "vertical"):
-				lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_height()
-			else:
-				lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_width()
+			for lvl in self.transition_img:
+				if(self.opt["orientation"] == "vertical"):
+					lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_height()
+				else:
+					lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_width()
 		else:
 			for lvl in self.levels:
 				# print lvl.scroll

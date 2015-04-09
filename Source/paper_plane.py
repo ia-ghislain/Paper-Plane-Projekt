@@ -459,6 +459,7 @@ class Play(object):
 		# bg = player.background_img.convert_alpha()
 		bg.add_transition(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
 		bg.add_transition(BG["cloud_to_factory"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+		bg.add_transition(BG["factory"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
 		bg.enable_transition()
 		# size = bg.get_rect().size
 		while not done:
