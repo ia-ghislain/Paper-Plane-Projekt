@@ -95,7 +95,7 @@ class ParallaxSurface:
 			image = pygame.transform.scale(image, size)
 			self.chg_size(size)
 		p = _subsurface(image, scroll_factor)
-		p.scroll = 100
+		p.scroll = 500
 		self.transition_img.append(p)
 	
 	def remove_transition(self,elem_id=False):
@@ -105,7 +105,11 @@ class ParallaxSurface:
 			del self.transition_img[elem_id]
 
 	def enable_transition(self):
+		if(len(self.transition_img) % 2 <> 0):
+			self.transition_img.append(self.transition_img[len(self.transition_img) - 1])
 		self.transition_active = True
+		if(len(set(self.transition_img)) == 1):
+			self.reset_transition()
 
 	def disable_transition(self):
 		self.transition_active = False
@@ -115,7 +119,9 @@ class ParallaxSurface:
 		self.remove_transition()
 
 	def is_transition_active(self):
-		return self.transition_active
+		if(len(set(self.transition_img)) and len(set(self.transition_img)) <> 1):
+			return True
+		return False
 
 	def add_colorkeyed_surface(self, surface, scroll_factor,color_key = (0xff, 0x00, 0xea)):
 		surface = surface.convert()
@@ -134,35 +140,42 @@ class ParallaxSurface:
 			provided as argument '''
 		s_width  = self.size[0]
 		s_height = self.size[1]
-		if(self.is_transition_active()):
-			#lvl = self.transition_img[self.transition_i]
-			for lvl in self.transition_img:
-				self.__blit(lvl,surface,s_width,s_height)
-			#print self.transition_img
-			#self.__blit(lvl,surface,s_width,s_height)
-			#if(len(self.transition_img) >= 1):
-			#	pass
-				# print lvl.surface
-			#	self.transition_i += 1
-			#	if(self.transition_i >= 1):
-			#		self.transition_i = 1
-				# self.remove_transition(0)
-			else:
-				pass
-				# self.reset_transition()
+		if(self.is_transition_active()): #Array not the same
+			if(self.opt["orientation"] == "vertical" and self.scroller >= (self.transition_img[0].scroll*s_height)):
+				print "Removing..."
+				del self.transition_img[0]
+			elif(self.opt["orientation"] == "horizontal" and self.scroller >= (self.transition_img[0].scroll*s_width)):
+				del self.transition_img[0]
+			lvl = self.transition_img[0]
+			lvl_next = self.transition_img[1]
+			self.__blit_transition(lvl,lvl_next,surface,s_width,s_height)
 		else:
+			print "Basics"
 			for lvl in self.levels:
 				self.__blit(lvl,surface,s_width,s_height)
 
-	def __blit(self,lvl,surface,s_width,s_height):
-		print lvl
+	def __blit_transition(self,lvl,lvl_next,surface,s_width,s_height):
 		if(self.opt["orientation"] == "vertical"):
 			if(self.opt["direction"] == "bottom"):
-				pass
+				surface.blit(lvl.surface, (0, 0), (0, -lvl.scroll, s_width, s_height))
+				surface.blit(lvl_next.surface, (0, lvl_next.scroll - lvl_next.surface.get_height()))
+			else:
+				surface.blit(lvl.surface, (0, 0), (0, lvl.scroll, s_width, s_height))
+				surface.blit(lvl_next.surface, (0,lvl_next.surface.get_height() - lvl_next.scroll))
+		else:
+			if(self.opt["direction"] == "left"):
+				surface.blit(lvl.surface, (0, 0), (lvl.scroll, 0, s_width, s_height))
+				surface.blit(lvl_next.surface, (lvl_next.surface.get_width() - lvl_next.scroll, 0),(0, 0, lvl_next.scroll, s_height))
+			else:
+				surface.blit(lvl.surface, (0, 0), (-lvl.scroll, 0, s_width, s_height))
+				surface.blit(lvl_next.surface, (lvl_next.scroll - lvl_next.surface.get_width(), 0),(0, 0, -lvl_next.scroll, s_height))
+
+	def __blit(self,lvl,surface,s_width,s_height):
+		if(self.opt["orientation"] == "vertical"):
+			if(self.opt["direction"] == "bottom"):
 				surface.blit(lvl.surface, (0, 0), (0, -lvl.scroll, s_width, s_height))
 				surface.blit(lvl.surface, (0, lvl.scroll - lvl.surface.get_height()))
 			else:
-				pass
 				surface.blit(lvl.surface, (0, 0), (0, lvl.scroll, s_width, s_height))
 				surface.blit(lvl.surface, (0,lvl.surface.get_height() - lvl.scroll))
 		else:
@@ -186,7 +199,6 @@ class ParallaxSurface:
 					lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_width()
 		else:
 			for lvl in self.levels:
-				# print lvl.scroll
 				if(self.opt["orientation"] == "vertical"):
 					lvl.scroll = (self.scroller / lvl.factor) % lvl.surface.get_height()
 				else:
