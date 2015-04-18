@@ -449,12 +449,12 @@ class Play(object):
 		
 		done = False
 		
-		speed = 10 # Speed of the airplane
-		tspeed = 13 # Turning speed
+		speed = 1 # Speed of the airplane
+		tspeed = 3 # Turning speed
 		tesla,ttesla = 0,0 # Time elapsed since last action
 		player.changespeed(0,speed) # Not turning at t=0
 		dt = clock.tick(FPS) # delta of t
-		pos = POS_RIGHT # Start the game @ left position
+		pos = POS_RIGHT # Start the game @ left positionP ou
 		# bg = player.background_img.convert_alpha()
 		# size = bg.get_rect().size
 		while not done:
@@ -484,12 +484,15 @@ class Play(object):
 				else:
 					gen_wall(self,pos,color=BLUE,img="wall_left") #Generate a wall
 			# Rendering
-			if(player.score == 2):
-				bg.add_transition(BG["clouds"], .1,(SCREEN_WIDTH,SCREEN_HEIGHT))
-				bg.add_transition(BG["clouds"], .1,(SCREEN_WIDTH,SCREEN_HEIGHT))
-				bg.add_transition(BG["cloud_to_factory"], .1,(SCREEN_WIDTH,SCREEN_HEIGHT))
-				bg.add_transition(BG["factory"], .1,(SCREEN_WIDTH,SCREEN_HEIGHT))
-				bg.enable_transition()
+			# print bg.transition_delay
+			if(player.score == 1 and bg.is_transition_active() == False):
+				bg.add_transition(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+				bg.add_transition(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+				bg.add_transition(BG["cloud_to_factory"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+				bg.add_transition(BG["factory"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+				bg.enable_transition(True)
+				bg.rem(BG["clouds"])
+				bg.add(BG["factory"],False,(SCREEN_WIDTH,SCREEN_HEIGHT))
 			self.all_sprite_list.draw(screen) # Draw everything so that text will be on top
 			self.all_sprite_list.update()
 			pygame.display.flip()
@@ -507,14 +510,13 @@ pygame.init()
 # Create an 800x600 sized screen
 screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
 bg = parallax.ParallaxSurface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RLEACCEL)
-bg.add(BG["clouds"], .1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+bg.add(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
 
 # Set the title of the window
-pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v0.1')
+pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v01')
 
 
 game = Play({"hey":False})
-#game.setp({"pcolor":ORANGE})
 
 def change_screen_mode(w,h,fs=False):
 	global SCREEN_WIDTH
