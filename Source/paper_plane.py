@@ -33,74 +33,87 @@ FONT_PATH = 'data/coders_crux.ttf'
 End of GC
 '''
 
+''' Function that generate a new random color '''
 def newcolour():
 	# any colour but black or white 
 	return (random.randint(10,250), random.randint(10,250), random.randint(10,250))
 
+''' A function to write on the surface. (Screen) '''
 def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False,use_gravity_center=False,font="None",font_size=30): #use_gravity_center, will use the gravity center of the text.
-	if(os.path.isfile(font)):
-		myfont = pygame.font.Font(font, font_size)
+	if(os.path.isfile(font)): # Is the font provided in the system's font ? a file ?
+		myfont = pygame.font.Font(font, font_size) # All right then, use that one
 	else:
-		myfont = pygame.font.SysFont(font, font_size)
-	mytext = myfont.render(msg, True, color)
-	mytext_rect = mytext.get_rect()
+		myfont = pygame.font.SysFont(font, font_size) # Well then use default system's name font
+	mytext = myfont.render(msg, True, color) # Create the text (using color size etc...) for pygame
+	mytext_rect = mytext.get_rect() # Get the text rectangle block
 	#G = myfont.render("+", True, RED) # UNCOMMENT 4 DEBUG : Display the gravity center
-	size = list(myfont.size(msg))
-	if(x <= SCREEN_WIDTH/2):
-		x = x+10
-	else:
-		x = x-10-size[0]
-	mytext = mytext.convert_alpha()
-	mytext_rect.center = (x,y)
-	if(s == False):
+	size = list(myfont.size(msg)) # Size of the text (how many chars)
+	if(x <= SCREEN_WIDTH/2): # Is the text going to be located on the left part of the screen ?
+		x = x+10 # Add margins (A wall is 10 px)
+	else: # Ok then it is on the right hand of the screen
+		x = x-10-size[0] # Add margin
+	mytext = mytext.convert_alpha() # Transparency
+	mytext_rect.center = (x,y) # Get the text's center of gravity
+	if(s == False): # Is any surface provided ? s = surface. If so, then put the text into it. (Like writing on clouds etc...)
 		if(use_gravity_center==True):
-			screen.blit(mytext,mytext_rect)
+			screen.blit(mytext,mytext_rect) # Displaying text (blit method) by using the center of gravity
 		else:
-			screen.blit(mytext,(x,y))
+			screen.blit(mytext,(x,y)) # Displaying text (blit method) by using the top left hand corner (coord : 0,0)
 		#screen.blit(G,(x,y-10)) # UNCOMMENT 4 DEBUG : Display the gravity center
-	else:
-		if(use_gravity_center==True):
-			s.blit(mytext,mytext_rect)
-		else:
-			s.blit(mytext,(x,y))
-	return mytext
+	else: # Use the screen as a surface
+		if(use_gravity_center==True): # Same as above
+			s.blit(mytext,mytext_rect) # Same as above
+		else: # Same as above
+			s.blit(mytext,(x,y)) # Same as above
+	return mytext # Return the text if some manipulation are needed.
 
-# This class represents the bar at the bottom that the player controls
+"""This class represents the aircraft that the player controls"""
 class Player(pygame.sprite.Sprite):
 
 	# Set speed vector
 	change_x = 0
 	change_y = 0
-	walls = None
-	frame_walls = None
-	score = -2
+	walls = None # No Walls
+	frame_walls = None # No frame Walls
+	score = -2 # Initial score. -2 to get rid of the two initial clouds, left and right.
 	high_score = 0
-	crached = False
+	crached = False # Well, that won't be nice if you set it to true
 	plane_color = LIGHT_BLUE #Blue by default
+	# An array of plane pictures. left ; right ; face
 	plane_img = {	
 					"face":pygame.image.load("data/images/plane_face.png"),
 					"left":pygame.image.load("data/images/plane_left.png"),
 					"right":pygame.image.load("data/images/plane_right.png")
 				}
 	
-	# Constructor function
+	# Constructor function of the class.
 	def __init__(self, x, y,color=LIGHT_BLUE,high_score=0):
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
+		# Set the plane's color
 		self.plane_color = color
 		# Set height, width
 		self.image = self.plane_img["face"].convert() #pygame.Surface([22, 23],pygame.SRCALPHA) # Contain the plane
 		self.image.set_colorkey(WHITE) # Light is the transparent color
 
-		# Make our top-left corner the passed-in location.
+		# Make our top-left corner the passed-in location. (coord : 0,0)
 		self.rect = self.image.get_rect()
 		self.rect.y = y
 		self.rect.x = x
 
 		self.high_score = high_score # Set the hscore
+	''' A function that change the color of the plane '''
 	def change_player_color(self,color):
 		self.image.fill(color)
-	def changespeed(self, x, y):
+	''' 
+	A function that change the speed of the plane.
+		The plane move left to right when x > 0, and right to left when x < 0
+		The plane move top to bottom with a speed of y > 0. When y < 0, the plane move from the bottom to the top.
+		To give an illusion of gravity, y is always > 0
+		when x = 0, the plane stop moving left/right
+		when y = 0, the plane stop moving top/bottom
+	'''
+ 	def changespeed(self, x, y):
 		#Change the speed and coordinates of the player
 		if(not self.crached):
 			if(x<0):
@@ -113,88 +126,99 @@ class Player(pygame.sprite.Sprite):
 				self.image.set_colorkey(WHITE)
 			self.change_x = x
 			self.change_y = y
+	''' Get the current speed. It returns a list (x,y) '''
 	def getspeed(self):
 		return int(self.change_x),int(self.change_y)
 
+	''' Update is the function that move the plane and check if there is any collision '''
 	def update(self):
-		if(self.score >= 0):
-			write(str(self.score),SCREEN_WIDTH)
-		else:
-			write("0",SCREEN_WIDTH)
-		if(self.score >= self.high_score): # Are you good ?
-			self.high_score = self.score # Ok ! not that bad !
-		write(str(self.high_score),SCREEN_WIDTH,30,RED)
+		if(self.score >= 0): #Is the score >= 0
+			write(str(self.score),SCREEN_WIDTH) # Then write the score on the screen
+		else: # The score is < 0 (like -2)
+			write("0",SCREEN_WIDTH) # Put a fake score of '0' avoiding displaying -2 as score. Yeah, i know, ugly...
+
+		if(self.score >= self.high_score): # Are you good @ the game ?
+			self.high_score = self.score # Ok ! not that bad ! Can do much better...
+
+		write(str(self.high_score),SCREEN_WIDTH,30,RED) # Display the highest score in red on the top right hand corner
+
 		# Update the player position.
+		
+		if((SCREEN_HEIGHT/5) > self.rect.y): # When the plane is still higher than 1/5 of the screen, then
+			self.rect.y += self.change_y # Move down & simulate gravity.
+
 		# Move left/right
-		if((SCREEN_HEIGHT/5) > self.rect.y):
-			# Move down, simulate grav.
-			self.rect.y += self.change_y
 		self.rect.x += self.change_x
 
-		# Did this update cause us to hit a wall?
+		# Did this move cause us to hit a wall?
 		block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
 		block_hit_list_frame = pygame.sprite.spritecollide(self, self.frame_walls, False)
 		
+		# Did we hit one of the frame walls ?
 		for block in block_hit_list_frame:
 				#If we hit the frame blocks then push us back in the game
 			self.change_x = -(self.change_x)
+
+		# Did we hit a 'normal' wall
 		for block in block_hit_list:
 				self.changespeed(0,0) # Stop moves
 				self.crached = True # Set the variable
-				print "***Collision detected***"
-				write("***Crash !***",0,0,RED)
+				# print "***Collision detected***" # For debugging purposes
+				# write("***Crash !***",0,0,RED) # For debugging purposes
+		# Game's dynamic		
 		for block in self.walls:
-			# print str(block.rect.x) + " AND => " + str(self.rect.x)
-			block.rect.y = block.rect.y-(self.change_y) #Move the blocks up
-			# write(str(self.rect.y),10,0)
-			# write(str(block.rect.y),10,30)
+			block.rect.y = block.rect.y-(self.change_y) #Move the blocks up to simulate gravity
+
 			if(block.rect.y==self.rect.y): #Is the player @ the same line as block ?
 				# print(self.score)
-				self.score +=1
-				# ev = pygame.event.Event(EVENT_WALL_PASSED, {'score':self.score}) # Create the event
-				# pygame.event.post(ev) # Broadcast the event
+				self.score +=1 # Ok, he must have passed the wall, so +1
 
 
+""" 
+	This class represents any obstacles. Frame wall ; Walls etc..., the player can run into 
+	PyGame use that class to throw it on the screen.
+"""
 class Wall(pygame.sprite.Sprite): 
+	# Images used for the wall
 	wall_img =	{
-					"frame_left":pygame.image.load("data/images/frame_left.png"), # Need to be defined & drawn
-					"frame_right":pygame.image.load("data/images/frame_right.png"), # Need to be defined & drawn
-					"lvl_left":pygame.image.load("data/images/lvl_left.png"), # Need to be defined & drawn
-					"platform_left_e":pygame.image.load("data/images/platform_left_edge.png"), # Need to be defined & drawn
-					"platform_left_b":pygame.image.load("data/images/platform_body_left.png"), # Need to be defined & drawn
-					"platform_right_e":pygame.image.load("data/images/platform_right_edge.png"), # Need to be defined & drawn
-					"platform_right_b":pygame.image.load("data/images/platform_body_right.png"), # Need to be defined & drawn
-					"lvl_right":pygame.image.load("data/images/lvl_right.png"), # Need to be defined & drawn
-					"demo":pygame.image.load("data/images/platform_demo.png") # Need to be defined & drawn
+					"frame_left":pygame.image.load("data/images/frame_left.png"),
+					"frame_right":pygame.image.load("data/images/frame_right.png"),
+					"lvl_left":pygame.image.load("data/images/lvl_left.png"),
+					"platform_left_e":pygame.image.load("data/images/platform_left_edge.png"),
+					"platform_left_b":pygame.image.load("data/images/platform_body_left.png"),
+					"platform_right_e":pygame.image.load("data/images/platform_right_edge.png"),
+					"platform_right_b":pygame.image.load("data/images/platform_body_right.png"),
+					"lvl_right":pygame.image.load("data/images/lvl_right.png"),
+					"demo":pygame.image.load("data/images/platform_demo.png")
 				}
-	# Wall the player can run into.
+
+	# Constructor function
 	def __init__(self, x, y, width, height,color=WHITE,img="",blit_pos="",fit_img = True):
-		# Constructor for the wall that the player can run into.
 		# Call the parent's constructor
 		super(self.__class__, self).__init__()
 		self.width,self.height = width,height 
-		# Make a blue wall, of the size specified in the parameters
+		# create the wall, of the size specified in the parameters
 		self.container = pygame.Surface([width, height]).convert()
-		self.container.fill(color)
-		if(img in self.wall_img):# If is in the wall_img array
+		self.container.fill(color) # Color the wall of var color
+		if(img in self.wall_img):# If is in the wall_img array defined above, then
 			self.container.set_colorkey(color) # Make the color transparent
-			if(blit_pos == "right"):
-				i_pos = (width,0)
-			elif(isinstance(blit_pos,tuple) and len(blit_pos == 2)):
-				i_pos = blit_pos
+			if(blit_pos == "right"): # Is the wall going to be displayed @ the left side ?
+				i_pos = (width,0) # Then blit will be full right
+			elif(isinstance(blit_pos,tuple) and len(blit_pos == 2)): # Custom blit position
+				i_pos = blit_pos # Handle custom blit position like in the center etc...
 			else: # We assume that it on the default position = left
-				i_pos = (0,0)
-			if(fit_img == True):
+				i_pos = (0,0) # Then blit will be full left
+			if(fit_img == True): # Do we need to make it beautiful with pretty images ?
 				self.container.blit(pygame.transform.scale(self.wall_img[img], (width,height)),i_pos) # Blit the scaled image
 			else:
 				self.container.blit(self.wall_img[img],i_pos) # Blit the image regardless to the resolution
-		elif(img == "wall_left"):
-			pre_img_size = self.wall_img["platform_right_e"].get_size()
-			prb_img_size = self.wall_img["platform_right_b"].get_size()
+		elif(img == "wall_left"): # Custom image, left wall
+			pre_img_size = self.wall_img["platform_right_e"].get_size() # Img size
+			prb_img_size = self.wall_img["platform_right_b"].get_size() # Img size
 			self.container.set_colorkey(color) # Make the color transparent
-			self.container.blit(self.wall_img["platform_right_e"],(width-pre_img_size[0],0))
-			for i in xrange(1,(width/prb_img_size[0])+2):
-				self.container.blit(self.wall_img["platform_right_b"],(width-pre_img_size[0]-i*prb_img_size[0],0))
+			self.container.blit(self.wall_img["platform_right_e"],(width-pre_img_size[0],0)) # blit the image.
+			for i in xrange(1,(width/prb_img_size[0])+2): # How many images will i need to fit the wall ? 
+				self.container.blit(self.wall_img["platform_right_b"],(width-pre_img_size[0]-i*prb_img_size[0],0)) # Put images parts.
 		elif(img == "wall_right"):
 			ple_img_size = self.wall_img["platform_left_e"].get_size()
 			plb_img_size = self.wall_img["platform_left_b"].get_size()
