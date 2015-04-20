@@ -26,11 +26,15 @@ EVENT_TR = pygame.USEREVENT + 2 # Event turn right
 SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
 IS_FULL_SCREEN = False
-BG_IMG = 'data/images/background.png'
+BG = 	{
+	 		"clouds":'data/images/background.png',
+	 	 	"factory":'data/images/factory_background.png',
+	 	 	"cloud_to_factory":'data/images/gradient.png'
+	 	}
 FONTS = {
 			 "tux":'data/coders_crux.ttf',
 			 "clouds":'data/clouds.otf'
-			}
+		}
 
 '''
 End of GC
@@ -71,6 +75,7 @@ def write(msg="pygame is cool",x=0,y=0,color=ORANGE,s=False,use_gravity_center=F
 	return mytext # Return the text if some manipulation are needed.
 
 """This class represents the aircraft that the player controls"""
+
 class Player(pygame.sprite.Sprite):
 
 	# Set speed vector
@@ -314,7 +319,6 @@ class Menu(object):
 		menu.fill(self.background_color)
 		selection_rect = self.fields[self.selection_position].zaznaczenie_rect
 		pygame.draw.rect(menu, self.selection_color, selection_rect)
-
 		for i in xrange(self.fields_quantity):
 			menu.blit(self.fields[i].pole, self.fields[i].pole_rect)
 			bg.draw(screen)
@@ -518,7 +522,7 @@ class Play(object):
 		tesla,dtesla = 0,0 # Time elapsed since last action & Dynamic tesla
 		player.changespeed(0,self.param["speed"]) # Not turning at t=0
 		dt = clock.tick(FPS) # delta of t
-		pos = POS_RIGHT # Start the game @ left position
+		pos = POS_RIGHT # Start the game @ left positionP ou
 		# bg = player.background_img.convert_alpha()
 		# size = bg.get_rect().size
 		while not done:
@@ -566,6 +570,15 @@ class Play(object):
 					dtesla = 0
 					self.increase_speed(player,self.param["dynamic_speed_factor"])
 				# Rendering
+				# print bg.transition_delay
+				if(player.score == 1 and bg.is_transition_active() == False):
+					bg.add_transition(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+					bg.add_transition(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+					bg.add_transition(BG["cloud_to_factory"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+					bg.add_transition(BG["factory"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
+					bg.enable_transition(True)
+					bg.rem(BG["clouds"])
+					bg.add(BG["factory"],False,(SCREEN_WIDTH,SCREEN_HEIGHT))
 				self.all_sprite_list.draw(screen) # Draw everything so that text will be on top
 				self.all_sprite_list.update()
 				pygame.display.flip()
@@ -588,14 +601,13 @@ pygame.init()
 # Create an 800x600 sized screen
 screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
 bg = parallax.ParallaxSurface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RLEACCEL)
-bg.add(BG_IMG, 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
+bg.add(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
 
 # Set the title of the window
-pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v0.1')
+pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v01')
 
 
 game = Play({"hey":False})
-#game.setp({"pcolor":ORANGE})
 
 def change_screen_mode(w,h,fs=False):
 	global SCREEN_WIDTH
@@ -610,7 +622,7 @@ def change_screen_mode(w,h,fs=False):
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT],pygame.FULLSCREEN)
 		else:
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
-		bg.update(BG_IMG, 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
+		bg.update(BG["clouds"], 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
 		show_menu(menu_lst['Options'][show_menu]["Display"][show_menu])
 	return True
 
