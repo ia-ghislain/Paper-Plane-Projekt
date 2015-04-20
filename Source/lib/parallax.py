@@ -1,5 +1,5 @@
-'''A simple parallax rendering module'''
 # -*- coding: utf-8 -*-
+'''A simple parallax rendering module'''
 
 #    Copyright (C) , 2012 Åke Forslund (ake.forslund@gmail.com)
 #

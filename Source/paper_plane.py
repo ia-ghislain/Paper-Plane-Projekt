@@ -27,7 +27,10 @@ SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
 IS_FULL_SCREEN = False
 BG_IMG = 'data/images/background.png'
-FONT_PATH = 'data/coders_crux.ttf'
+FONTS = {
+			 "tux":'data/coders_crux.ttf',
+			 "clouds":'data/clouds.otf'
+			}
 
 '''
 End of GC
@@ -237,7 +240,7 @@ class Wall(pygame.sprite.Sprite):
 		self.rect.y = y
 		self.rect.x = x
 
-	def write(self,msg,x=0,y=0,color=LIGHT_BLUE,font_size=50,font=FONT_PATH): # An alias to the write function
+	def write(self,msg,x=0,y=0,color=LIGHT_BLUE,font_size=50,font=FONTS["tux"]): # An alias to the write function
 		if(x == "center"):
 			x = self.width/2
 		if(y == "center"):
@@ -258,7 +261,7 @@ class Menu(object):
 	legacy_list = []
 	fields = []
 	font_size = 32
-	font_path = FONT_PATH # Font being used
+	font_path = FONTS["tux"] # Font being used
 	font = pygame.font.Font # Init font
 	dest_surface = pygame.Surface # Init surface
 	fields_quantity = 0
@@ -373,6 +376,7 @@ class Play(object):
 	wall_list = pygame.sprite.Group()
 	level = 0
 	wall_gentime = 2000 # in ms
+	is_paused = False
 
 	def __init__(self,uparam):
 		#super(self.__class__, self).__init__()
@@ -391,6 +395,22 @@ class Play(object):
 		self.param.update(dparam) #Merge given array & default array
 		self.iparam = self.param
 		self.wall_gentime = self.param["wall_gentime"]
+	def toggle_pause(self):
+		if(not self.is_paused):
+			self.is_paused = True
+			# Save
+			self.paused_plist = self.all_sprite_list
+			self.paused_wlist = self.wall_list
+			self.paused_param = self.param
+			self.reset_game()
+			screen.fill(LIGHT_BLUE)
+			write("Pause",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,font_size=100,font=FONTS["clouds"],use_gravity_center=True)
+			write("Press <p> to continue the game looser !",0,(SCREEN_HEIGHT)-30,WHITE,font=FONTS["tux"])
+		else:
+			self.all_sprite_list = self.paused_plist
+			self.wall_list = self.paused_wlist
+			self.param = self.paused_param
+			self.is_paused = False
 	def setp(self,uparam): # set parametter
 		self.param.update(uparam) #Merge given array & default array
 	
@@ -502,55 +522,63 @@ class Play(object):
 		# bg = player.background_img.convert_alpha()
 		# size = bg.get_rect().size
 		while not done:
-			screen.fill(WHITE) # Clean the screen
-			bg.draw(screen)
-			bg.scroll(1,{"orientation":"vertical","direction":"top"})
-			tesla += dt
-			dtesla += dt
-			for event in pygame.event.get():
-				if event.type == pygame.QUIT:
-					show_menu(menu_lst) # On quit, return to the main menu
-				# elif event.type == EVENT_WALL_PASSED: # If the wall has been passed
-					# pass
-				elif event.type == EVENT_TL:
-					player.changespeed(-self.param["tspeed"], self.param["speed"])
-					pygame.time.set_timer(EVENT_TL, 0) # Stop the event to be repeated
-				elif event.type == EVENT_TR:
-					player.changespeed(self.param["tspeed"], self.param["speed"])
-					pygame.time.set_timer(EVENT_TR, 0) # Stop the event to be repeated
-				elif event.type == pygame.KEYDOWN:
-					if event.key == pygame.K_LEFT:
-						if(self.param["action_delay"] == False):
-							player.changespeed(-self.param["tspeed"], self.param["speed"])
-						else:
-							pygame.time.set_timer(EVENT_TL,self.param["action_delay_time"]) #25 ms before the action is realised
-					elif event.key == pygame.K_RIGHT:
-						if(self.param["action_delay"] == False):
-							player.changespeed(self.param["tspeed"], self.param["speed"])
-						else:
-							pygame.time.set_timer(EVENT_TR,self.param["action_delay_time"]) #25 ms before the action is realised
-			if (tesla > self.wall_gentime):
-				pos = 1-pos #Turn in the opposite dir. Generate a wall on the other side.
-				if(pos == POS_RIGHT):
-					print 'Gen right wall'
-					gen_wall(self,pos,color=RED,img="wall_right") #Generate a wall
-				else:
-					print 'Gen left wall'
-					gen_wall(self,pos,color=BLUE,img="wall_left") #Generate a wall
-				tesla = 0 # Reset timer
-					
-			if(dtesla > self.param["dynamic_speed_time_interval"]):
-				dtesla = 0
-				self.increase_speed(player,self.param["dynamic_speed_factor"])
-			# Rendering
-			self.all_sprite_list.draw(screen) # Draw everything so that text will be on top
-			self.all_sprite_list.update()
-			pygame.display.flip()
-			clock.tick(FPS) #Frame rate (in milliseconds)
-			if(player.crached):
-				del frame_wall_list
-				self.crashed(player) # The player crashed ! What a nooooob !
-				break # Stop the loop
+			if(not self.is_paused):
+				screen.fill(WHITE) # Clean the screen
+				bg.draw(screen)
+				bg.scroll(1,{"orientation":"vertical","direction":"top"})
+				tesla += dt
+				dtesla += dt
+				for event in pygame.event.get():
+					if event.type == pygame.QUIT:
+						show_menu(menu_lst) # On quit, return to the main menu
+					# elif event.type == EVENT_WALL_PASSED: # If the wall has been passed
+						# pass
+					elif event.type == EVENT_TL:
+						player.changespeed(-self.param["tspeed"], self.param["speed"])
+						pygame.time.set_timer(EVENT_TL, 0) # Stop the event to be repeated
+					elif event.type == EVENT_TR:
+						player.changespeed(self.param["tspeed"], self.param["speed"])
+						pygame.time.set_timer(EVENT_TR, 0) # Stop the event to be repeated
+					elif event.type == pygame.KEYDOWN:
+						if event.key == pygame.K_p or event.key == pygame.K_PAUSE : # Button p
+							self.toggle_pause()
+						elif event.key == pygame.K_LEFT:
+							if(self.param["action_delay"] == False):
+								player.changespeed(-self.param["tspeed"], self.param["speed"])
+							else:
+								pygame.time.set_timer(EVENT_TL,self.param["action_delay_time"]) #25 ms before the action is realised
+						elif event.key == pygame.K_RIGHT:
+							if(self.param["action_delay"] == False):
+								player.changespeed(self.param["tspeed"], self.param["speed"])
+							else:
+								pygame.time.set_timer(EVENT_TR,self.param["action_delay_time"]) #25 ms before the action is realised
+				if (tesla > self.wall_gentime):
+					pos = 1-pos #Turn in the opposite dir. Generate a wall on the other side.
+					if(pos == POS_RIGHT):
+						print 'Gen right wall'
+						gen_wall(self,pos,color=RED,img="wall_right") #Generate a wall
+					else:
+						print 'Gen left wall'
+						gen_wall(self,pos,color=BLUE,img="wall_left") #Generate a wall
+					tesla = 0 # Reset timer
+						
+				if(dtesla > self.param["dynamic_speed_time_interval"]):
+					dtesla = 0
+					self.increase_speed(player,self.param["dynamic_speed_factor"])
+				# Rendering
+				self.all_sprite_list.draw(screen) # Draw everything so that text will be on top
+				self.all_sprite_list.update()
+				pygame.display.flip()
+				clock.tick(FPS) #Frame rate (in milliseconds)
+				if(player.crached):
+					del frame_wall_list
+					self.crashed(player) # The player crashed ! What a nooooob !
+					break # Stop the loop
+			else:
+				for event in pygame.event.get():
+					if event.type == pygame.KEYDOWN:
+						if event.key == pygame.K_p or event.key == pygame.K_PAUSE : # Button p
+							self.toggle_pause()
 
 
 # Call this function so the Pygame library can initialize itself
