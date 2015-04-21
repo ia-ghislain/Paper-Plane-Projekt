@@ -3,6 +3,9 @@ from pygame.locals import *
 from collections import OrderedDict
 from time import *
 sys.path.append("lib")
+sys.path.append("lang")
+os.path.join("lang")
+from lang import fr_FR as lang
 import parallax
 '''
 Global constants
@@ -13,9 +16,10 @@ BLACK    	= (   0,   0,   0)
 WHITE    	= ( 255, 255, 255)
 BLUE     	= (   0,   0, 255)
 ORANGE   	= ( 252, 177,  54)
-LIGHT_BLUE	= ( 1,   174, 240)
-BROWN    	= ( 91,    0,   0)
-RED 		= (255,    0,   0)
+LIGHT_BLUE	= (   1, 174, 240)
+LIGHT_GREEN = (  64, 255,   0)
+BROWN    	= (  91,   0,   0)
+RED 		= ( 255,   0,   0)
 POS_LEFT 	= 0
 POS_RIGHT	= 1
 FPS			= 60
@@ -27,18 +31,47 @@ SCREEN_WIDTH  = 800
 SCREEN_HEIGHT = 600
 IS_FULL_SCREEN = False
 BG = 	{
-	 		"clouds":'data/images/background.png',
-	 	 	"factory":'data/images/factory_background.png',
-	 	 	"cloud_to_factory":'data/images/gradient.png'
-	 	}
+			"clouds":'data/images/background.png',
+			"factory":'data/images/factory_background.png',
+			"cloud_to_factory":'data/images/gradient.png'
+		}
 FONTS = {
-			 "tux":'data/coders_crux.ttf',
+			 "tux":'data/pix.ttf',
 			 "clouds":'data/clouds.otf'
 		}
 
 '''
 End of GC
 '''
+
+def get_options(var,file_name="options.ppp"):
+	f = shelve.open(file_name)
+	if(var in f):# Is variable defined ?
+		return f[var]
+	else:
+		return False # Nothing
+
+def set_options(var,val,file_name="options.ppp"):
+	f = shelve.open(file_name)
+	f[var] = val
+	return True
+
+def load_config():
+	global SCREEN_HEIGHT,SCREEN_WIDTH,IS_FULL_SCREEN,lang
+	if(not get_options("lang")):
+		set_options("lang","fr_FR")
+	if(not get_options("SCREEN_HEIGHT")):
+		set_options("SCREEN_HEIGHT",SCREEN_HEIGHT)
+	if(not get_options("SCREEN_WIDTH")):
+		set_options("SCREEN_WIDTH",SCREEN_WIDTH)
+	if(not get_options("IS_FULL_SCREEN")):
+		set_options("IS_FULL_SCREEN",IS_FULL_SCREEN)
+	SCREEN_HEIGHT = get_options("SCREEN_HEIGHT")
+	SCREEN_WIDTH = get_options("SCREEN_WIDTH")
+	IS_FULL_SCREEN = get_options("IS_FULL_SCREEN")
+	lang = __import__(get_options("lang"))
+
+load_config()
 
 ''' Function that generate a new random color '''
 def newcolour():
@@ -121,7 +154,7 @@ class Player(pygame.sprite.Sprite):
 		when x = 0, the plane stop moving left/right
 		when y = 0, the plane stop moving top/bottom
 	'''
- 	def changespeed(self, x, y):
+	def changespeed(self, x, y):
 		#Change the speed and coordinates of the player
 		if(not self.crached):
 			if(x<0):
@@ -408,8 +441,8 @@ class Play(object):
 			self.paused_param = self.param
 			self.reset_game()
 			screen.fill(LIGHT_BLUE)
-			write("Pause",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,font_size=100,font=FONTS["clouds"],use_gravity_center=True)
-			write("Press <p> to continue the game looser !",0,(SCREEN_HEIGHT)-30,WHITE,font=FONTS["tux"])
+			write(lang.GAME_PAUSE,SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,font_size=100,font=FONTS["clouds"],use_gravity_center=True)
+			write(lang.GAME_PAUSE_BUTTON_CONTINUE,0,(SCREEN_HEIGHT)-30,WHITE,font=FONTS["tux"])
 		else:
 			self.all_sprite_list = self.paused_plist
 			self.wall_list = self.paused_wlist
@@ -424,8 +457,8 @@ class Play(object):
 			> Need to increase gravity speed
 			> Each time a wall passed, then...
 			 (!) Tips : - Use player.changespeed function
-			 			- Use player.getspeed function
-			 			- Use self.wall_gentime variable
+						- Use player.getspeed function
+						- Use self.wall_gentime variable
 						- Use self.wall_gentime variable
 		'''
 		s = player.getspeed()
@@ -462,12 +495,12 @@ class Play(object):
 		self.reset_game()
 		if(self.set_high_score(player)):
 			screen.fill(ORANGE)
-			write("**** "+str(player.score)+" IS THE NEW BEST SCORE ****",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,use_gravity_center=True)
+			write("**** "+str(player.score)+" "+lang.GAME_CRASHED_NEWHIGHSCORE+" ****",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,use_gravity_center=True)
 		else:
 			screen.fill(BLACK)
-			write("You're a loooooser !",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,use_gravity_center=True)
-		write("<ESCAPE> Main menu",0,(SCREEN_HEIGHT)-30,WHITE)
-		write("<ENTER> Retry",SCREEN_WIDTH,(SCREEN_HEIGHT)-30,WHITE)
+			write(lang.GAME_CRASHED_NONHIGHSCORE,SCREEN_WIDTH/2,SCREEN_HEIGHT/2,WHITE,use_gravity_center=True)
+		write(lang.GAME_CRASHED_BUTTON_ESCAPE,0,(SCREEN_HEIGHT)-30,WHITE)
+		write(lang.GAME_CRASHED_BUTTON_RETRY,SCREEN_WIDTH,(SCREEN_HEIGHT)-30,WHITE)
 		del player # Clean the game
 	def set_level(self,lvl=0):
 		self.level = lvl
@@ -491,6 +524,7 @@ class Play(object):
 		self, x, y, width, height,color=BROWN
 		'''
 		wall = Wall(10, SCREEN_HEIGHT/5, 300, 530,BLUE,"lvl_left")
+		wall.write(lang.HOME_OPTION_PLAY_SHORT_LVL,"center","center",font_size=150)
 		self.wall_list.add(wall)
 		self.all_sprite_list.add(wall)
 		
@@ -599,12 +633,15 @@ pygame.init()
 # pygame.mouse.set_visible(False) # Hide the mouse
 
 # Create an 800x600 sized screen
-screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+if(not IS_FULL_SCREEN):
+	screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+else:
+	screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT],pygame.FULLSCREEN)
 bg = parallax.ParallaxSurface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RLEACCEL)
 bg.add(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
 
 # Set the title of the window
-pygame.display.set_caption('SUUUUPPPEEERRR Paper Plane v01')
+pygame.display.set_caption(lang.TITLE)
 
 
 game = Play({"hey":False})
@@ -622,8 +659,11 @@ def change_screen_mode(w,h,fs=False):
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT],pygame.FULLSCREEN)
 		else:
 			screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+		set_options("SCREEN_WIDTH",SCREEN_WIDTH)
+		set_options("SCREEN_HEIGHT",SCREEN_HEIGHT)
+		set_options("IS_FULL_SCREEN",IS_FULL_SCREEN)
 		bg.update(BG["clouds"], 3,(SCREEN_WIDTH,SCREEN_HEIGHT))
-		show_menu(menu_lst['Options'][show_menu]["Display"][show_menu])
+		show_menu(menu_lst[lang.HOME_OPTION_OPTIONS][show_menu][lang.HOME_OPTION_OPTIONS_DISPLAY][show_menu])
 	return True
 
 def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
@@ -675,37 +715,44 @@ def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
 		pygame.time.wait(8)
 
 menu_lst = OrderedDict({
-			'Play !':OrderedDict({
+			lang.HOME_OPTION_PLAY:OrderedDict({
 				show_menu:OrderedDict({
-					"Lvl 0":OrderedDict({game.start:(0)}),
-					"Lvl 2":OrderedDict({game.start:(2)}),
+					lang.HOME_OPTION_PLAY_LVL + " 0":OrderedDict({game.start:(0)}),
+					lang.HOME_OPTION_PLAY_LVL + " 2":OrderedDict({game.start:(2)}),
 				})
 			}),
-			'Options':OrderedDict({
+			lang.HOME_OPTION_OPTIONS:OrderedDict({
 				show_menu:OrderedDict({
-					"Color":OrderedDict({
+					lang.HOME_OPTION_OPTIONS_COLOR:OrderedDict({
 						show_menu:OrderedDict({
-							"Blue":OrderedDict({ game.setp:{"pcolor":BLUE},write:("Done !",0,0,BLUE) }),
-							"Black":OrderedDict({ game.setp:{"pcolor":BLACK},write:("Done !",0,0,BLACK) }),
-							"Brown":OrderedDict({ game.setp:{"pcolor":BROWN},write:("Done !",0,0,BROWN) }),
-							"Red":OrderedDict({ game.setp:{"pcolor":RED},write:("Done !",0,0,RED) }),
-							"Orange":OrderedDict({ game.setp:{"pcolor":ORANGE},write:("Done !",0,0,ORANGE) })
+							lang.HOME_OPTION_OPTIONS_COLOR_BLUE:OrderedDict({ game.setp:{"pcolor":BLUE},write:(lang.DONE,0,0,BLUE) }),
+							lang.HOME_OPTION_OPTIONS_COLOR_BLACK:OrderedDict({ game.setp:{"pcolor":BLACK},write:(lang.DONE,0,0,BLACK) }),
+							lang.HOME_OPTION_OPTIONS_COLOR_BROWN:OrderedDict({ game.setp:{"pcolor":BROWN},write:(lang.DONE,0,0,BROWN) }),
+							lang.HOME_OPTION_OPTIONS_COLOR_RED:OrderedDict({ game.setp:{"pcolor":RED},write:(lang.DONE,0,0,RED) }),
+							lang.HOME_OPTION_OPTIONS_COLOR_ORANGE:OrderedDict({ game.setp:{"pcolor":ORANGE},write:(lang.DONE,0,0,ORANGE) })
 						})
 					}),
-					"Display":OrderedDict({
+					lang.HOME_OPTION_OPTIONS_DISPLAY:OrderedDict({
 						show_menu:OrderedDict({
-							"Windowed (800x600)":OrderedDict({ change_screen_mode:(800,600) }),
-							"Windowed (1024x768)":OrderedDict({ change_screen_mode:(1024,768) }),
-							"Windowed (1280x800)":OrderedDict({ change_screen_mode:(1280,800) }),
-							"Full Screen (800x600)":OrderedDict({ change_screen_mode:(800,600,True) }),
-							"Full Screen (1024x768)":OrderedDict({ change_screen_mode:(1024,768,True) }),
-							"Full Screen (1280x800)":OrderedDict({ change_screen_mode:(1280,800,True) }),
+							lang.HOME_OPTION_OPTIONS_DISPLAY_WINDOWED+" (800x600)":OrderedDict({ change_screen_mode:(800,600) }),
+							lang.HOME_OPTION_OPTIONS_DISPLAY_WINDOWED+" (1024x768)":OrderedDict({ change_screen_mode:(1024,768) }),
+							lang.HOME_OPTION_OPTIONS_DISPLAY_WINDOWED+" (1280x800)":OrderedDict({ change_screen_mode:(1280,800) }),
+							lang.HOME_OPTION_OPTIONS_DISPLAY_FULLSCREEN+" (800x600)":OrderedDict({ change_screen_mode:(800,600,True) }),
+							lang.HOME_OPTION_OPTIONS_DISPLAY_FULLSCREEN+" (1024x768)":OrderedDict({ change_screen_mode:(1024,768,True) }),
+							lang.HOME_OPTION_OPTIONS_DISPLAY_FULLSCREEN+" (1280x800)":OrderedDict({ change_screen_mode:(1280,800,True) }),
+						})
+					}),
+					lang.HOME_OPTION_OPTIONS_LANG:OrderedDict({
+						show_menu:OrderedDict({
+							lang.HOME_OPTION_OPTIONS_LANG_fr_FR:OrderedDict({ set_options:("lang","fr_FR"),load_config:(),write:(lang.DONE + " "+lang.RESTART_REQUIRED,0,0,ORANGE) }),
+							lang.HOME_OPTION_OPTIONS_LANG_en_EN:OrderedDict({ set_options:("lang","en_EN"),load_config:(),write:(lang.DONE + " "+lang.RESTART_REQUIRED,0,0,ORANGE) }),
+							lang.HOME_OPTION_OPTIONS_LANG_ru_RU:OrderedDict({ set_options:("lang","ru_RU"),load_config:(),write:(lang.DONE + " "+lang.RESTART_REQUIRED,0,0,ORANGE) }),
 						})
 					}),
 
 				})
 			}),
-			'Quit':[
+			lang.HOME_OPTION_QUIT:[
 				pygame.display.quit,
 				sys.exit
 				]
