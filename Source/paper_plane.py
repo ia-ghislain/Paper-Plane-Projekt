@@ -6,6 +6,7 @@ sys.path.append("lib")
 sys.path.append("lang")
 os.path.join("lang")
 from lang import fr_FR as lang
+from lang.available_lang import *
 import parallax
 '''
 Global constants
@@ -57,7 +58,7 @@ def set_options(var,val,file_name="options.ppp"):
 	return True
 
 def load_config():
-	global SCREEN_HEIGHT,SCREEN_WIDTH,IS_FULL_SCREEN,lang
+	global SCREEN_HEIGHT,SCREEN_WIDTH,IS_FULL_SCREEN,lang,FONTS
 	if(not get_options("lang")):
 		set_options("lang","fr_FR")
 	if(not get_options("SCREEN_HEIGHT")):
@@ -66,9 +67,12 @@ def load_config():
 		set_options("SCREEN_WIDTH",SCREEN_WIDTH)
 	if(not get_options("IS_FULL_SCREEN")):
 		set_options("IS_FULL_SCREEN",IS_FULL_SCREEN)
+	if(not get_options("FONTS")):
+		set_options("FONTS",FONTS)
 	SCREEN_HEIGHT = get_options("SCREEN_HEIGHT")
 	SCREEN_WIDTH = get_options("SCREEN_WIDTH")
 	IS_FULL_SCREEN = get_options("IS_FULL_SCREEN")
+	FONTS = get_options("FONTS")
 	lang = __import__(get_options("lang"))
 
 load_config()
@@ -194,7 +198,6 @@ class Player(pygame.sprite.Sprite):
 		# Did this move cause us to hit a wall?
 		block_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
 		block_hit_list_frame = pygame.sprite.spritecollide(self, self.frame_walls, False)
-		
 		# Did we hit one of the frame walls ?
 		for block in block_hit_list_frame:
 				#If we hit the frame blocks then push us back in the game
@@ -280,10 +283,10 @@ class Wall(pygame.sprite.Sprite):
 
 	def write(self,msg,x=0,y=0,color=LIGHT_BLUE,font_size=50,font=FONTS["tux"]): # An alias to the write function
 		if(x == "center"):
-			x = self.width/2
+			x = self.width/2-10
 		if(y == "center"):
 			y = self.height/2
-		write(msg,x,y,color,self.image,True,font=font,font_size=font_size)
+		write(msg,x,y,color,self.image,font=font,use_gravity_center=True,font_size=font_size)
 		
 	def draw(self,x,y,surface,img):
 		img_size = img.convert().get_size()
@@ -466,9 +469,9 @@ class Play(object):
 		self.param["tspeed"] += factor
 		player.changespeed(s[0],self.param["speed"])
 		self.wall_gentime = factor*(1910.950027*pow(self.param["speed"],-0.7562482036))
-		print s
-		print self.wall_gentime
-		print 'Launched'
+		# print s
+		# print self.wall_gentime
+		print 'Increase Speed Called'
 
 
 	def set_high_score(self,player,file_name="score.ppp"):
@@ -593,10 +596,10 @@ class Play(object):
 				if (tesla > self.wall_gentime):
 					pos = 1-pos #Turn in the opposite dir. Generate a wall on the other side.
 					if(pos == POS_RIGHT):
-						print 'Gen right wall'
+						# print 'Gen right wall'
 						gen_wall(self,pos,color=RED,img="wall_right") #Generate a wall
 					else:
-						print 'Gen left wall'
+						# print 'Gen left wall'
 						gen_wall(self,pos,color=BLUE,img="wall_left") #Generate a wall
 					tesla = 0 # Reset timer
 						
@@ -605,7 +608,7 @@ class Play(object):
 					self.increase_speed(player,self.param["dynamic_speed_factor"])
 				# Rendering
 				# print bg.transition_delay
-				if(player.score == 1 and bg.is_transition_active() == False):
+				if(player.score == 20 and bg.is_transition_active() == False):
 					bg.add_transition(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
 					bg.add_transition(BG["clouds"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
 					bg.add_transition(BG["cloud_to_factory"], 1,(SCREEN_WIDTH,SCREEN_HEIGHT))
@@ -714,6 +717,22 @@ def show_menu(mlst,title=""): #menu list menu is a list with (name:function)
 				sys.exit()
 		pygame.time.wait(8)
 
+def get_lang():
+	global AVAILABLE_LANGS,FONTS
+	ldict = OrderedDict({
+
+			})
+	for lid,lstr in AVAILABLE_LANGS.viewitems():
+		if(type(lstr) is list):
+			FONTS["tux"] = FONTS["clouds"] = "data/"+lstr[1]
+			lstr = lstr[0]
+		else:
+			FONTS["tux"] = "data/pix.ttf"
+			FONTS["clouds"] = "data/clouds.otf"
+		set_options("FONTS",FONTS)
+		ldict[lstr.encode('utf-8').decode('utf-8')] = OrderedDict({ set_options:("lang",lid),load_config:(),write:(lang.DONE + " "+lang.RESTART_REQUIRED,0,0,ORANGE) })
+	return ldict
+
 menu_lst = OrderedDict({
 			lang.HOME_OPTION_PLAY:OrderedDict({
 				show_menu:OrderedDict({
@@ -743,11 +762,7 @@ menu_lst = OrderedDict({
 						})
 					}),
 					lang.HOME_OPTION_OPTIONS_LANG:OrderedDict({
-						show_menu:OrderedDict({
-							lang.HOME_OPTION_OPTIONS_LANG_fr_FR:OrderedDict({ set_options:("lang","fr_FR"),load_config:(),write:(lang.DONE + " "+lang.RESTART_REQUIRED,0,0,ORANGE) }),
-							lang.HOME_OPTION_OPTIONS_LANG_en_EN:OrderedDict({ set_options:("lang","en_EN"),load_config:(),write:(lang.DONE + " "+lang.RESTART_REQUIRED,0,0,ORANGE) }),
-							lang.HOME_OPTION_OPTIONS_LANG_ru_RU:OrderedDict({ set_options:("lang","ru_RU"),load_config:(),write:(lang.DONE + " "+lang.RESTART_REQUIRED,0,0,ORANGE) }),
-						})
+						show_menu:get_lang()
 					}),
 
 				})
