@@ -164,7 +164,7 @@ class Player(pygame.sprite.Sprite):
 			if(x<0):
 				self.image = self.plane_img["left"].convert()
 				# self.image.fill(self.plane_color) # Nevermind...
-				# self.image.set_colorkey(WHITE)
+				self.image.set_colorkey(WHITE)
 			elif(x>0):
 				self.image = self.plane_img["right"].convert()
 				# self.image.fill(self.plane_color) # Nevermind...
